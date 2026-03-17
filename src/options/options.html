@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TenZhong Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 32px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+    }
+    .subtitle {
+      color: #777;
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
+    .section {
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #eee;
+    }
+    .section:last-child { border-bottom: none; }
+    .section h2 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .field label {
+      font-size: 14px;
+      flex: 1;
+    }
+    .field select, .field input[type="text"] {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fafafa;
+    }
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #ccc;
+      border-radius: 24px;
+      transition: 0.2s;
+    }
+    .toggle .slider::before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle input:checked + .slider { background: #3498db; }
+    .toggle input:checked + .slider::before { transform: translateX(20px); }
+    .tone-colors {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .tone-color {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .tone-color input[type="color"] {
+      width: 36px;
+      height: 28px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .tone-color span {
+      font-size: 11px;
+      color: #999;
+    }
+    textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: monospace;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .saved {
+      display: none;
+      color: #27ae60;
+      font-size: 13px;
+      margin-left: 8px;
+    }
+    .saved.show { display: inline; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a2e; color: #e0e0e0; }
+      .container { background: #2a2a3e; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+      h1 { color: #e0e0e0; }
+      .section { border-color: #444; }
+      .section h2 { color: #aaa; }
+      .field select, .field input[type="text"], textarea { background: #1e1e2e; border-color: #555; color: #e0e0e0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TenZhong Settings <span id="saved" class="saved">Saved!</span></h1>
+    <p class="subtitle">Chinese Pop-up Dictionary</p>
+
+    <div class="section">
+      <h2>Display</h2>
+      <div class="field">
+        <label>Character display</label>
+        <select id="charDisplay">
+          <option value="simplified">Simplified only</option>
+          <option value="traditional">Traditional only</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Theme</label>
+        <select id="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="auto">Auto (match system)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Font size</label>
+        <select id="fontSize">
+          <option value="small">Small</option>
+          <option value="normal">Normal</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Max entries in popup</label>
+        <select id="maxEntries">
+          <option value="3">3</option>
+          <option value="5">5</option>
+          <option value="7">7</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Pinyin & Tones</h2>
+      <div class="field">
+        <label>Show tone colors</label>
+        <label class="toggle">
+          <input type="checkbox" id="showToneColors" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="field">
+        <label>Show Zhuyin (Bopomofo)</label>
+        <label class="toggle">
+          <input type="checkbox" id="showZhuyin" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div>
+        <label>Tone colors</label>
+        <div class="tone-colors" id="toneColors">
+          <div class="tone-color"><input type="color" id="tone1" /><span>1st</span></div>
+          <div class="tone-color"><input type="color" id="tone2" /><span>2nd</span></div>
+          <div class="tone-color"><input type="color" id="tone3" /><span>3rd</span></div>
+          <div class="tone-color"><input type="color" id="tone4" /><span>4th</span></div>
+          <div class="tone-color"><input type="color" id="tone5" /><span>Neutral</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Blacklist</h2>
+      <textarea id="blacklist" placeholder="example.com&#10;another-site.org"></textarea>
+      <p class="hint">One domain per line. The dictionary will be disabled on these sites.</p>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

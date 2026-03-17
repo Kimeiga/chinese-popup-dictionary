@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>TenZhong E2E Test Page</title>
+  <style>
+    body {
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 2;
+      font-size: 18px;
+    }
+    h1 { font-size: 24px; }
+    .test-block {
+      margin: 20px 0;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .test-block h2 {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>TenZhong E2E 测试页面</h1>
+
+  <div class="test-block" id="test-single">
+    <h2>Test 1: Single characters</h2>
+    <p id="single-char">人</p>
+  </div>
+
+  <div class="test-block" id="test-word">
+    <h2>Test 2: Common words</h2>
+    <p id="common-word">中国</p>
+  </div>
+
+  <div class="test-block" id="test-long">
+    <h2>Test 3: Long compound (longest-prefix matching)</h2>
+    <p id="long-compound">中华人民共和国</p>
+  </div>
+
+  <div class="test-block" id="test-sentence">
+    <h2>Test 4: Full sentence</h2>
+    <p id="sentence">你好，欢迎来到中国。这是一个测试。</p>
+  </div>
+
+  <div class="test-block" id="test-mixed">
+    <h2>Test 5: Mixed CJK and English</h2>
+    <p id="mixed">I love 学习中文 every day.</p>
+  </div>
+
+  <div class="test-block" id="test-traditional">
+    <h2>Test 6: Traditional characters</h2>
+    <p id="traditional">中華人民共和國</p>
+  </div>
+</body>
+</html>

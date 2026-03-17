@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <rect x="1" y="1" width="14" height="14" rx="2" fill="#E74C3C"/>
+  <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
+    font-family="'Noto Sans SC', 'Microsoft YaHei', sans-serif"
+    font-size="9" font-weight="700" fill="white">中</text>
+</svg>

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+data/cedict.txt
+data/cedict.txt.gz
+data/cedict.json
+*.zip
+.DS_Store
+*.map
+
+# Reference repos (local only)
+10ten-ja-reader/
+zhongzhong/

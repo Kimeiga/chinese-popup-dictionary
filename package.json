@@ -1,0 +1,30 @@
+{
+  "name": "tenzhong-chinese-dictionary",
+  "version": "1.0.0",
+  "description": "A fast, modern Chinese pop-up dictionary Chrome extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build --mode production",
+    "build:dict": "npx tsx src/scripts/build-dict.ts",
+    "lint": "eslint src/",
+    "format": "prettier --write 'src/**/*.{ts,tsx,html,css}'",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:all": "npm run test && npm run test:e2e",
+    "package": "npm run build && cd dist && zip -r ../tenzhong.zip ."
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.38",
+    "@types/node": "^25.5.0",
+    "eslint": "^10.0.3",
+    "prettier": "^3.8.1",
+    "puppeteer": "^24.39.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
+  }
+}
