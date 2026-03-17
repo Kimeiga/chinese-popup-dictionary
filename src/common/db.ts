@@ -153,11 +153,25 @@ export async function longestPrefixLookup(
     }
 
     if (entries.length > 0) {
-      return { entries, matchLen: len };
+      return { entries: deduplicateEntries(entries), matchLen: len };
     }
   }
 
   return null;
+}
+
+/**
+ * Remove duplicate entries that share the same simplified + traditional + pinyin.
+ * Guards against double-inserts from race conditions during dictionary loading.
+ */
+function deduplicateEntries(entries: DictEntry[]): DictEntry[] {
+  const seen = new Set<string>();
+  return entries.filter((e) => {
+    const key = `${e.simplified}\t${e.traditional}\t${e.pinyinRaw}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**

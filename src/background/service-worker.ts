@@ -22,21 +22,27 @@ import type {
 } from '../common/types';
 
 let settings: ExtensionSettings | null = null;
-let dictLoading = false;
+
+// Singleton promise prevents the race condition where onInstalled + top-level
+// startup both call ensureDictLoaded() concurrently, causing double inserts.
+let dictLoadPromise: Promise<void> | null = null;
 
 // ---- Dictionary Loading ----
 
-async function ensureDictLoaded(): Promise<void> {
-  if (dictLoading) return;
+function ensureDictLoaded(): Promise<void> {
+  if (!dictLoadPromise) {
+    dictLoadPromise = doLoadDict();
+  }
+  return dictLoadPromise;
+}
 
+async function doLoadDict(): Promise<void> {
   const loaded = await isDictLoaded();
   if (loaded) return;
 
-  dictLoading = true;
   console.log('[TenZhong] Loading dictionary into IndexedDB...');
 
   try {
-    // Fetch the pre-built dictionary JSON from extension assets
     const url = chrome.runtime.getURL('assets/cedict.json');
     const response = await fetch(url);
     const data = await response.json();
@@ -58,8 +64,8 @@ async function ensureDictLoaded(): Promise<void> {
     );
   } catch (err) {
     console.error('[TenZhong] Failed to load dictionary:', err);
-  } finally {
-    dictLoading = false;
+    // Reset so a retry can happen
+    dictLoadPromise = null;
   }
 }
 
