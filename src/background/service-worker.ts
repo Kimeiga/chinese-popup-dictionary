@@ -193,17 +193,20 @@ async function handleLookup(
   maxResults: number = 7
 ): Promise<WordLookupResult | null> {
   await ensureDictLoaded();
-  await ensureDongDictsLoaded();
 
   const result = await longestPrefixLookup(text, 10);
   if (!result) return null;
 
   const matchText = text.substring(0, result.matchLen);
 
-  // Also look up Dong Chinese word entries for the matched text
+  // Try Dong Chinese enrichment without blocking — if dicts aren't loaded
+  // yet, just return without dong data so the popup appears instantly.
   let dongEntries: DongWordEntry[] = [];
   try {
-    dongEntries = await lookupDongWord(matchText);
+    const dongLoaded = await isDongLoaded();
+    if (dongLoaded) {
+      dongEntries = await lookupDongWord(matchText);
+    }
   } catch {
     // Non-critical, continue without Dong data
   }
@@ -219,11 +222,13 @@ async function handleLookup(
 async function handleLookupChar(
   char: string
 ): Promise<CharLookupResult> {
-  await ensureDongDictsLoaded();
-
+  // Don't block — if dong dicts aren't loaded yet, return null entry
   let entry: DongCharEntry | null = null;
   try {
-    entry = await lookupDongChar(char);
+    const dongLoaded = await isDongLoaded();
+    if (dongLoaded) {
+      entry = await lookupDongChar(char);
+    }
   } catch {
     // Non-critical
   }
