@@ -62,6 +62,25 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       overflow: hidden;
       animation: tz-in 0.1s ease-out;
       color: var(--tz-text);
+      display: flex;
+      flex-direction: column;
+    }
+    .tz-body {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .tz-scroll-fade {
+      position: relative;
+    }
+    .tz-scroll-fade.has-more::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: linear-gradient(transparent, var(--tz-bg));
+      pointer-events: none;
     }
     @keyframes tz-in {
       from { opacity: 0; transform: translateY(2px); }

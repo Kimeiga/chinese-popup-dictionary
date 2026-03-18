@@ -199,19 +199,43 @@ function renderPopup(): void {
     shadow.appendChild(popupEl);
   }
 
-  let html = renderTabBar();
+  let bodyContent = '';
 
   if (currentTab === 'word') {
-    html += renderWordTab();
+    bodyContent = renderWordTab();
   } else {
-    html += renderCharacterTab();
+    bodyContent = renderCharacterTab();
   }
 
-  // Always show shortcut hints at bottom
+  let html = renderTabBar();
+  html += `<div class="tz-scroll-fade"><div class="tz-body">${bodyContent}</div></div>`;
   html += renderFooter();
 
   popupEl.innerHTML = html;
   popupEl.classList.remove('tz-hidden');
+
+  // Cap body height to fit within viewport
+  const bodyEl = popupEl.querySelector('.tz-body') as HTMLElement;
+  const fadeEl = popupEl.querySelector('.tz-scroll-fade') as HTMLElement;
+  if (bodyEl && fadeEl) {
+    // Calculate max height: viewport height minus tab bar, footer, borders, margin
+    const popupRect = popupEl.getBoundingClientRect();
+    const bodyRect = bodyEl.getBoundingClientRect();
+    const nonBodyHeight = popupRect.height - bodyRect.height;
+    const maxBodyHeight = Math.max(150, window.innerHeight * 0.7 - nonBodyHeight);
+    bodyEl.style.maxHeight = `${maxBodyHeight}px`;
+
+    // Show fade indicator if content is scrollable
+    requestAnimationFrame(() => {
+      if (bodyEl.scrollHeight > bodyEl.clientHeight) {
+        fadeEl.classList.add('has-more');
+        bodyEl.addEventListener('scroll', () => {
+          const atBottom = bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight < 8;
+          fadeEl.classList.toggle('has-more', !atBottom);
+        }, { passive: true });
+      }
+    });
+  }
 
   // Attach tab click handlers
   const tabButtons = popupEl.querySelectorAll('.tz-tab');
@@ -230,6 +254,12 @@ function renderPopup(): void {
   requestAnimationFrame(() => {
     if (!popupEl) return;
     positionPopup(popupEl, lastX, lastY);
+
+    // Scroll selected entry into view within the popup body
+    const selectedEl = popupEl.querySelector('.tz-selected');
+    if (selectedEl) {
+      selectedEl.scrollIntoView({ block: 'nearest' });
+    }
   });
 }
 
@@ -266,7 +296,7 @@ function renderWordTab(): string {
   const selectedIdx = copyState.selectedIndex;
 
   return entries
-    .map((entry, i) => renderWordEntry(entry, dongEntry, i, i === selectedIdx))
+    .map((entry, i) => renderWordEntry(entry, dongEntry, i, i === selectedIdx, entries.length))
     .join('');
 }
 
@@ -274,7 +304,8 @@ function renderWordEntry(
   entry: DictEntry,
   dongEntry: DongWordEntry | null,
   index: number,
-  isSelected: boolean
+  isSelected: boolean,
+  totalEntries: number = 1
 ): string {
   const charDisplay = currentSettings.charDisplay;
 
@@ -315,9 +346,9 @@ function renderWordEntry(
     ? `<div class="tz-zhuyin">${renderZhuyin(entry.pinyinRaw)}</div>`
     : '';
 
-  // Dong gloss (compact summary)
+  // Dong gloss (compact summary) — only on selected entry when multiple
   let glossHtml = '';
-  if (dongEntry?.gloss && showDefinitions) {
+  if (dongEntry?.gloss && showDefinitions && (totalEntries <= 1 || isSelected)) {
     glossHtml = `<div class="tz-gloss">${escapeHtml(dongEntry.gloss)}</div>`;
   }
 
@@ -334,9 +365,13 @@ function renderWordEntry(
       .join('');
   }
 
+  // Dong readings + top words: only show on the selected entry (or first entry)
+  // to avoid repeating identical dong data on every CEDICT entry
+  const showDongOnThis = totalEntries <= 1 || isSelected;
+
   // Dong items: show additional readings with their definitions (grouped by pinyin)
   let dongItemsHtml = '';
-  if (dongEntry && showDefinitions) {
+  if (dongEntry && showDefinitions && showDongOnThis) {
     // Group items by pinyin, skipping the one that matches CEDICT entry
     const readings = groupDongReadings(dongEntry.items, entry.pinyinRaw, entry.definitions);
     if (readings.length > 0) {
@@ -350,9 +385,9 @@ function renderWordEntry(
     }
   }
 
-  // Top words (show for single-char words or when only 1 entry)
+  // Top words: only show on selected entry to avoid repetition
   let topWordsHtml = '';
-  if (dongEntry?.statistics?.topWords && dongEntry.statistics.topWords.length > 0 && showDefinitions) {
+  if (dongEntry?.statistics?.topWords && dongEntry.statistics.topWords.length > 0 && showDefinitions && showDongOnThis) {
     const words = dongEntry.statistics.topWords.slice(0, 5);
     const chips = words.map(w =>
       `<span class="tz-chip">${escapeHtml(w.word)}${w.gloss ? ` <span class="tz-chip-g">${escapeHtml(w.gloss)}</span>` : ''}</span>`
