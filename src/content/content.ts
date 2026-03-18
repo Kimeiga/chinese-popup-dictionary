@@ -417,13 +417,42 @@ function speakChinese(): void {
   utterance.lang = 'zh-CN';
   utterance.rate = 0.85;
 
-  // Try to find a Chinese voice
+  // Pick the best Chinese voice available
   const voices = speechSynthesis.getVoices();
-  const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+  const zhVoice = pickChineseVoice(voices);
   if (zhVoice) utterance.voice = zhVoice;
 
   speechSynthesis.speak(utterance);
-  showCopiedFeedback('speaking');
+  showCopiedFeedback(`Speaking: ${text}`);
+}
+
+/**
+ * Pick the best Chinese voice, preferring high-quality female voices.
+ * Priority: premium/enhanced zh-CN voices > standard zh-CN > any zh-*.
+ */
+function pickChineseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  // Preferred voice names (female, high quality) across platforms
+  const preferred = [
+    'Google 普通话',          // Chrome (high quality, female)
+    'Tingting',               // macOS (female, zh-CN)
+    'Ting-Ting',              // macOS alternate
+    'Meijia',                 // macOS (female, zh-TW)
+    'Microsoft Xiaoxiao',     // Windows (female, neural)
+    'Microsoft Yunyang',      // Windows (male, neural, clear)
+    'Huihui',                 // Windows (female)
+  ];
+
+  const zhVoices = voices.filter(v => v.lang.startsWith('zh'));
+  if (zhVoices.length === 0) return null;
+
+  // Try preferred voices first
+  for (const name of preferred) {
+    const match = zhVoices.find(v => v.name.includes(name));
+    if (match) return match;
+  }
+
+  // Prefer zh-CN, then any zh
+  return zhVoices.find(v => v.lang === 'zh-CN') || zhVoices[0];
 }
 
 function selectNext(): void {
@@ -444,7 +473,7 @@ async function doCopy(text: string, what: string): Promise<void> {
   if (!text) return;
   try {
     await navigator.clipboard.writeText(text);
-    showCopiedFeedback(what);
+    showCopiedFeedback(`Copied ${what}!`);
   } catch {
     console.debug('[ZiTan] Clipboard write failed');
   }

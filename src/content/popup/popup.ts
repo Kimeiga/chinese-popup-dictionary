@@ -274,7 +274,7 @@ function renderTabBar(): string {
 
 function renderFooter(): string {
   if (copyState.mode === 'copied') {
-    return `<div class="tz-footer tz-copy-flash">Copied ${escapeHtml(copyState.what)}!</div>`;
+    return `<div class="tz-footer tz-copy-flash">${escapeHtml(copyState.what)}</div>`;
   }
 
   const hints = currentTab === 'word'
