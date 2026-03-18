@@ -1,4 +1,4 @@
-# ZiTan (字探) — Chinese Pop-up Dictionary
+# ZiTan Chinese Popup Dictionary (字探)
 
 A fast, modern Chrome extension for reading Chinese. Hover over any Chinese text on the web to instantly see definitions, pinyin with tone colors, HSK levels, character etymology, and more.
 
@@ -15,7 +15,8 @@ Inspired by [10ten Japanese Reader](https://github.com/birchill/10ten-ja-reader)
 - **Dark theme** by default, inspired by 10ten Japanese Reader. Light and auto (system) themes available
 - **Keyboard shortcuts** for fast navigation and copying
 - **Shadow DOM** isolation — popup styles never interfere with the host page
-- **Longest-prefix matching** — automatically finds the longest dictionary match
+- **Sub-word matching** — shows all dictionary words starting from the cursor, not just the longest match
+- **Text-to-speech** — press `s` to hear any word or character spoken aloud
 - **Highlight length control** — use `[` / `]` to shrink or extend the matched text
 - **Site block list** — disable on specific domains
 - **Zero external requests** — all dictionary data is bundled locally
@@ -32,6 +33,7 @@ When the popup is visible:
 | `r` | Copy pinyin reading |
 | `g` | Copy gloss / definition |
 | `e` | Copy full entry (word + pinyin + definitions) |
+| `s` | Speak word / character aloud |
 | `n` / `b` | Select next / previous entry |
 | `1`-`9` | Select nth entry directly |
 | `d` | Toggle definitions on/off |

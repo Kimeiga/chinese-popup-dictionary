@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "ZiTan Chinese Dictionary",
+  "name": "ZiTan Chinese Popup Dictionary",
   "version": "1.0.0",
   "description": "A fast, modern Chinese pop-up dictionary. Hover over Chinese text to see definitions, pinyin, and tone colors instantly.",
   "permissions": [
@@ -25,7 +25,7 @@
     }
   ],
   "action": {
-    "default_title": "ZiTan Chinese Dictionary",
+    "default_title": "ZiTan Chinese Popup Dictionary",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

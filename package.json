@@ -1,7 +1,7 @@
 {
-  "name": "zitan-chinese-dictionary",
+  "name": "zitan-chinese-popup-dictionary",
   "version": "1.0.0",
-  "description": "A fast, modern Chinese pop-up dictionary Chrome extension",
+  "description": "ZiTan Chinese Popup Dictionary — hover over Chinese text to see definitions, pinyin, HSK level, and more",
   "private": true,
   "type": "module",
   "scripts": {
