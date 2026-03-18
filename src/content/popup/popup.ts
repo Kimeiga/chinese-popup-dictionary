@@ -278,8 +278,8 @@ function renderFooter(): string {
   }
 
   const hints = currentTab === 'word'
-    ? `<span class="tz-key">c</span>word <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">e</span>entry <span class="tz-key">n</span>/<span class="tz-key">b</span>cycle <span class="tz-key">d</span>defs <span class="tz-key">[</span>/<span class="tz-key">]</span>len`
-    : `<span class="tz-key">c</span>char <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">e</span>entry <span class="tz-key">d</span>defs`;
+    ? `<span class="tz-key">c</span>word <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">e</span>entry <span class="tz-key">s</span>speak <span class="tz-key">n</span>/<span class="tz-key">b</span>cycle <span class="tz-key">d</span>defs <span class="tz-key">[</span>/<span class="tz-key">]</span>len`
+    : `<span class="tz-key">c</span>char <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">e</span>entry <span class="tz-key">s</span>speak <span class="tz-key">d</span>defs`;
 
   return `<div class="tz-footer">${hints}</div>`;
 }

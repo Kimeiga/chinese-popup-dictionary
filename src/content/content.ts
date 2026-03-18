@@ -145,6 +145,7 @@ function onKeyDown(e: KeyboardEvent): void {
     case 'r': copyPinyin(); e.preventDefault(); break;
     case 'g': copyGloss(); e.preventDefault(); break;
     case 'e': copyFullEntry(); e.preventDefault(); break;
+    case 's': speakChinese(); e.preventDefault(); break;
     case 'n': selectNext(); e.preventDefault(); break;
     case 'b': selectPrev(); e.preventDefault(); break;
     case 'd': toggleDefinitions(); e.preventDefault(); break;
@@ -392,6 +393,37 @@ function copyFullEntry(): void {
 
   const text = `${entry.simplified}${entry.traditional !== entry.simplified ? ` (${entry.traditional})` : ''} [${entry.pinyin}] ${entry.definitions.join('; ')}`;
   doCopy(text, 'entry');
+}
+
+function speakChinese(): void {
+  let text = '';
+
+  if (getCurrentTab() === 'character') {
+    text = getHoveredChar();
+  } else {
+    const result = getCurrentWordResult();
+    if (!result) return;
+    const idx = getSelectedIndex();
+    const entry = result.entries[idx];
+    if (entry) text = entry.simplified;
+  }
+
+  if (!text) return;
+
+  // Cancel any ongoing speech
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'zh-CN';
+  utterance.rate = 0.85;
+
+  // Try to find a Chinese voice
+  const voices = speechSynthesis.getVoices();
+  const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+  if (zhVoice) utterance.voice = zhVoice;
+
+  speechSynthesis.speak(utterance);
+  showCopiedFeedback('speaking');
 }
 
 function selectNext(): void {
