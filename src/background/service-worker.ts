@@ -25,7 +25,11 @@ import type {
   ContentToBackground,
   DictEntry,
   DongWordEntry,
+  DongWordEntryRaw,
   DongCharEntry,
+  DongCharEntryRaw,
+  DongTopWord,
+  DongTopWordRaw,
   ExtensionSettings,
   WordLookupResult,
   CharLookupResult,
@@ -87,6 +91,57 @@ function ensureDongDictsLoaded(): Promise<void> {
   return dongLoadPromise;
 }
 
+/** Expand compact topWords from raw format */
+function expandTopWords(raw?: DongTopWordRaw[]): DongTopWord[] | undefined {
+  if (!raw || raw.length === 0) return undefined;
+  return raw.map(tw => ({
+    word: tw.w,
+    trad: tw.t,
+    share: tw.s,
+    gloss: tw.g,
+  }));
+}
+
+/** Expand compact word entry to full format */
+function expandWordEntry(simp: string, raw: DongWordEntryRaw): DongWordEntry {
+  const entry: DongWordEntry = {
+    simp,
+    trad: raw.t,
+    items: raw.i as DongWordEntry['items'],
+  };
+  if (raw.g) entry.gloss = raw.g;
+  if (raw.s) {
+    entry.statistics = {
+      ...raw.s,
+      topWords: expandTopWords(raw.s.topWords as unknown as DongTopWordRaw[]),
+    };
+  }
+  return entry;
+}
+
+/** Expand compact char entry to full format */
+function expandCharEntry(char: string, raw: DongCharEntryRaw): DongCharEntry {
+  const entry: DongCharEntry = { char };
+  if (raw.cp) entry.codepoint = raw.cp;
+  if (raw.sc) entry.strokeCount = raw.sc;
+  if (raw.co) entry.components = raw.co;
+  if (raw.g) entry.gloss = raw.g;
+  if (raw.h) entry.hint = raw.h;
+  if (raw.op) entry.oldPronunciations = raw.op;
+  if (raw.pf) entry.pinyinFrequencies = raw.pf;
+  if (raw.om) entry.originalMeaning = raw.om;
+  if (raw.vo) entry.variantOf = raw.vo;
+  if (raw.tv) entry.tradVariants = raw.tv;
+  if (raw.sv) entry.simpVariants = raw.sv;
+  if (raw.s) {
+    entry.statistics = {
+      ...raw.s,
+      topWords: expandTopWords(raw.s.topWords as unknown as DongTopWordRaw[]),
+    };
+  }
+  return entry;
+}
+
 async function doLoadDongDicts(): Promise<void> {
   const loaded = await isDongLoaded();
   if (loaded) return;
@@ -99,18 +154,31 @@ async function doLoadDongDicts(): Promise<void> {
       fetch(chrome.runtime.getURL('assets/dong-chars.json')),
     ]);
 
-    const [wordsData, charsData] = await Promise.all([
-      wordsResponse.json(),
-      charsResponse.json(),
+    const [wordsRaw, charsRaw] = await Promise.all([
+      wordsResponse.json() as Promise<Record<string, DongWordEntryRaw[]>>,
+      charsResponse.json() as Promise<Record<string, DongCharEntryRaw>>,
     ]);
 
+    // Expand compact entries to full format for IndexedDB
+    const wordIndex: Record<string, DongWordEntry[]> = {};
+    let wordCount = 0;
+    for (const [simp, rawEntries] of Object.entries(wordsRaw)) {
+      wordIndex[simp] = rawEntries.map(r => expandWordEntry(simp, r));
+      wordCount += rawEntries.length;
+    }
+
+    const charMap: Record<string, DongCharEntry> = {};
+    for (const [char, rawEntry] of Object.entries(charsRaw)) {
+      charMap[char] = expandCharEntry(char, rawEntry);
+    }
+
     await Promise.all([
-      loadDongWords(wordsData.entries),
-      loadDongChars(charsData.entries),
+      loadDongWords(wordIndex),
+      loadDongChars(charMap),
     ]);
 
     console.log(
-      `[ZiTan] Dong Chinese data loaded: ${wordsData.count} words, ${charsData.count} chars`
+      `[ZiTan] Dong Chinese data loaded: ${wordCount} words, ${Object.keys(charMap).length} chars`
     );
   } catch (err) {
     console.error('[ZiTan] Failed to load Dong Chinese data:', err);

@@ -108,34 +108,10 @@ async function parseCEDICT(): Promise<RawEntry[]> {
 async function buildIndex(entries: RawEntry[]): Promise<void> {
   console.log('[build-dict] Building indexed dictionary...');
 
-  // Build a lookup map keyed by both simplified and traditional characters
-  // This enables O(1) lookups by character sequence
-  const indexMap = new Map<string, number[]>();
-
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i];
-
-    // Index by simplified
-    const simplifiedIndices = indexMap.get(entry.s) || [];
-    simplifiedIndices.push(i);
-    indexMap.set(entry.s, simplifiedIndices);
-
-    // Index by traditional (only if different from simplified)
-    if (entry.t !== entry.s) {
-      const traditionalIndices = indexMap.get(entry.t) || [];
-      traditionalIndices.push(i);
-      indexMap.set(entry.t, traditionalIndices);
-    }
-  }
-
-  // Build the output: entries array + index map
+  // Output: entries array only. The index is built at load time in IndexedDB.
   const output = {
     version: new Date().toISOString().slice(0, 10),
-    source: 'CC-CEDICT',
-    entryCount: entries.length,
-    indexSize: indexMap.size,
     entries,
-    index: Object.fromEntries(indexMap),
   };
 
   const json = JSON.stringify(output);
@@ -144,7 +120,7 @@ async function buildIndex(entries: RawEntry[]): Promise<void> {
 
   const sizeMB = (Buffer.byteLength(json) / 1024 / 1024).toFixed(1);
   console.log(
-    `[build-dict] Wrote ${JSON_PATH} (${sizeMB} MB, ${entries.length} entries, ${indexMap.size} index keys)`
+    `[build-dict] Wrote ${JSON_PATH} (${sizeMB} MB, ${entries.length} entries)`
   );
 }
 

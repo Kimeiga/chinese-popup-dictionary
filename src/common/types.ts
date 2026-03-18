@@ -35,14 +35,22 @@ export interface DongWordItem {
   tang?: string[];
 }
 
-/** Dong Chinese word entry */
+/** Dong Chinese word entry (compact keys from build script) */
 export interface DongWordEntry {
-  _id: string;
+  /** simp is the key in the index, added at load time */
   simp: string;
   trad: string;
   items: DongWordItem[];
   gloss?: string;
   statistics?: DongStatistics;
+}
+
+/** Raw compact word entry from dong-words.json */
+export interface DongWordEntryRaw {
+  t: string;      // trad
+  i: unknown[];   // items
+  g?: string;     // gloss
+  s?: DongStatisticsRaw; // statistics
 }
 
 /** Dong Chinese character component */
@@ -52,25 +60,37 @@ export interface DongComponent {
   hint?: string | null;
 }
 
-/** Dong Chinese character entry */
+/** Dong Chinese character entry (expanded from compact format) */
 export interface DongCharEntry {
-  _id: string;
   char: string;
   codepoint?: string;
   strokeCount?: number;
-  sources?: string[];
   components?: DongComponent[];
   gloss?: string;
   hint?: string;
   oldPronunciations?: DongOldPronunciation[];
   pinyinFrequencies?: DongPinyinFrequency[];
   statistics?: DongCharStatistics;
-  isVerified?: boolean;
-  shuowen?: string;
   originalMeaning?: string;
   variantOf?: string;
   tradVariants?: string[];
   simpVariants?: string[];
+}
+
+/** Raw compact char entry from dong-chars.json */
+export interface DongCharEntryRaw {
+  cp?: string;    // codepoint
+  sc?: number;    // strokeCount
+  co?: DongComponent[]; // components
+  g?: string;     // gloss
+  h?: string;     // hint
+  op?: DongOldPronunciation[]; // oldPronunciations
+  pf?: DongPinyinFrequency[];  // pinyinFrequencies
+  s?: DongCharStatisticsRaw;   // statistics
+  om?: string;    // originalMeaning
+  vo?: string;    // variantOf
+  tv?: string[];  // tradVariants
+  sv?: string[];  // simpVariants
 }
 
 export interface DongOldPronunciation {
@@ -88,20 +108,14 @@ export interface DongPinyinFrequency {
 
 export interface DongStatistics {
   hskLevel?: number;
-  bookWordCount?: number;
-  bookWordCountPercent?: number;
   bookWordRank?: number;
-  movieWordCount?: number;
   movieWordRank?: number;
   topWords?: DongTopWord[];
 }
 
 export interface DongCharStatistics extends DongStatistics {
-  bookCharCount?: number;
   bookCharRank?: number;
-  movieCharCount?: number;
   movieCharRank?: number;
-  pinyinFrequency?: number;
 }
 
 export interface DongTopWord {
@@ -109,6 +123,25 @@ export interface DongTopWord {
   trad: string;
   share: number;
   gloss?: string;
+}
+
+/** Raw compact statistics from JSON (short keys) */
+export interface DongStatisticsRaw {
+  hskLevel?: number;
+  bookWordRank?: number;
+  movieWordRank?: number;
+  bookCharRank?: number;
+  movieCharRank?: number;
+  topWords?: DongTopWordRaw[];
+}
+
+export type DongCharStatisticsRaw = DongStatisticsRaw;
+
+export interface DongTopWordRaw {
+  w: string;  // word
+  t: string;  // trad
+  s: number;  // share
+  g?: string; // gloss
 }
 
 /** Word lookup result: CC-CEDICT entries + matching Dong Chinese word entries */
