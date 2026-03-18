@@ -149,8 +149,8 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       line-height: 1.2;
     }
     .tz-hanzi-alt {
-      font-size: 16px;
       color: var(--tz-text2);
+      font-weight: 400;
     }
     .tz-pinyin, .tz-py {
       font-size: 14px;

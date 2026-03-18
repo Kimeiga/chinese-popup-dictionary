@@ -309,16 +309,24 @@ function renderWordEntry(
   const charDisplay = currentSettings.charDisplay;
 
   let primaryHanzi: string;
-  let secondaryHanzi: string | null = null;
+  let altHanzi: string | null = null;
 
   if (charDisplay === 'simplified') {
     primaryHanzi = entry.simplified;
   } else if (charDisplay === 'traditional') {
     primaryHanzi = entry.traditional;
   } else {
-    primaryHanzi = entry.simplified;
-    if (entry.traditional !== entry.simplified) {
-      secondaryHanzi = entry.traditional;
+    // Show both: highlighted character on the left, alternate on the right
+    // Determine which form matches the hovered text
+    const matchText = currentWordResult?.matchText || '';
+    if (matchText === entry.traditional && entry.traditional !== entry.simplified) {
+      primaryHanzi = entry.traditional;
+      altHanzi = entry.simplified;
+    } else {
+      primaryHanzi = entry.simplified;
+      if (entry.traditional !== entry.simplified) {
+        altHanzi = entry.traditional;
+      }
     }
   }
 
@@ -346,9 +354,11 @@ function renderWordEntry(
     ? `<div class="tz-zhuyin">${renderZhuyin(entry.pinyinRaw)}</div>`
     : '';
 
-  // Dong gloss (compact summary) — only on selected entry when multiple
+  const isSingleChar = [...entry.simplified].length === 1;
+
+  // Dong gloss — skip for single-char words (shown on character tab instead)
   let glossHtml = '';
-  if (dongEntry?.gloss && showDefinitions && (totalEntries <= 1 || isSelected)) {
+  if (dongEntry?.gloss && showDefinitions && !isSingleChar && (totalEntries <= 1 || isSelected)) {
     glossHtml = `<div class="tz-gloss">${escapeHtml(dongEntry.gloss)}</div>`;
   }
 
@@ -374,7 +384,7 @@ function renderWordEntry(
 
   // Top words: only show on selected entry to avoid repetition
   let topWordsHtml = '';
-  if (dongEntry?.statistics?.topWords && dongEntry.statistics.topWords.length > 0 && showDefinitions && showDongOnThis) {
+  if (dongEntry?.statistics?.topWords && dongEntry.statistics.topWords.length > 0 && showDefinitions && !isSingleChar && showDongOnThis) {
     const words = dongEntry.statistics.topWords.slice(0, 5);
     const chips = words.map(w =>
       `<span class="tz-chip">${escapeHtml(w.word)}${w.gloss ? ` <span class="tz-chip-g">${escapeHtml(w.gloss)}</span>` : ''}</span>`
@@ -393,7 +403,7 @@ function renderWordEntry(
   return `<div class="tz-entry ${selCls}" data-idx="${index}">
     <div class="tz-row">
       <span class="tz-hanzi">${escapeHtml(primaryHanzi)}</span>
-      ${secondaryHanzi ? `<span class="tz-hanzi-alt">${escapeHtml(secondaryHanzi)}</span>` : ''}
+      ${altHanzi ? `<span class="tz-hanzi tz-hanzi-alt">${escapeHtml(altHanzi)}</span>` : ''}
       <span class="tz-pinyin">${pinyinHtml}</span>
       ${hskBadge}${freqHtml}
     </div>
