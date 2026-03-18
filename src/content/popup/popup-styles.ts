@@ -189,25 +189,6 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       margin-bottom: 2px;
     }
 
-    /* Dong extra readings */
-    .tz-dong-reading {
-      font-size: 12px;
-      color: var(--tz-text2);
-      margin-top: 2px;
-      padding-top: 2px;
-      border-top: 1px dotted var(--tz-divider);
-    }
-    .tz-dong-pinyin {
-      font-weight: 600;
-      color: var(--tz-text);
-      margin-right: 4px;
-    }
-    .tz-tang {
-      font-size: 11px;
-      opacity: 0.7;
-      font-style: italic;
-    }
-
     /* HSK badges */
     .tz-hsk {
       font-size: 9px;

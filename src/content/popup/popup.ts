@@ -8,7 +8,6 @@
 import type {
   DictEntry,
   DongWordEntry,
-  DongWordItem,
   DongCharEntry,
   ExtensionSettings,
   WordLookupResult,
@@ -370,21 +369,8 @@ function renderWordEntry(
   // to avoid repeating identical dong data on every CEDICT entry
   const showDongOnThis = totalEntries <= 1 || isSelected;
 
-  // Dong items: show additional readings with their definitions (grouped by pinyin)
-  let dongItemsHtml = '';
-  if (dongEntry && showDefinitions && showDongOnThis) {
-    // Group items by pinyin, skipping the one that matches CEDICT entry
-    const readings = groupDongReadings(dongEntry.items, entry.pinyinRaw, entry.definitions);
-    if (readings.length > 0) {
-      dongItemsHtml = readings.map(r => {
-        const defs = r.definitions.length > 0
-          ? ` ${r.definitions.map(d => escapeHtml(d)).join('; ')}`
-          : '';
-        const tangHtml = r.tang ? ` <span class="tz-tang">Tang: ${escapeHtml(r.tang)}</span>` : '';
-        return `<div class="tz-dong-reading"><span class="tz-dong-pinyin">${escapeHtml(r.pinyin)}</span>${defs}${tangHtml}</div>`;
-      }).join('');
-    }
-  }
+  // Dong readings removed: they duplicate CEDICT definitions with older
+  // wording. Dong value comes from metadata (HSK, freq, gloss, top words).
 
   // Top words: only show on selected entry to avoid repetition
   let topWordsHtml = '';
@@ -413,82 +399,9 @@ function renderWordEntry(
     </div>
     ${zhuyinHtml}
     ${variantHtml}
-    ${showDefinitions ? `<div class="tz-defs">${glossHtml}${defsHtml}${dongItemsHtml}</div>` : ''}
+    ${showDefinitions ? `<div class="tz-defs">${glossHtml}${defsHtml}</div>` : ''}
     ${topWordsHtml}
   </div>`;
-}
-
-/**
- * Group Dong items by unique pinyin, merging definitions.
- * Skip definitions that duplicate CEDICT — only show extra readings or Tang data.
- */
-function groupDongReadings(
-  items: DongWordItem[],
-  cedictPinyinRaw: string,
-  cedictDefinitions: string[]
-): { pinyin: string; definitions: string[]; tang?: string }[] {
-  // Normalize CEDICT pinyin for comparison (strip tone marks and spaces)
-  const cedictNorm = cedictPinyinRaw.toLowerCase().replace(/\s+/g, '').replace(/[0-5]/g, '');
-
-  // Build a set of CEDICT definitions (lowercased) for dedup
-  const cedictDefsSet = new Set(cedictDefinitions.map(d => d.toLowerCase().trim()));
-
-  const byPinyin = new Map<string, { definitions: string[]; tang?: string; isSameReading: boolean }>();
-
-  for (const item of items) {
-    if (!item.pinyin) continue;
-
-    // Check if this reading matches the CEDICT pinyin
-    const itemNorm = item.pinyin.toLowerCase().replace(/\s+/g, '').replace(/[̄́̌̀āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, (c) => {
-      const map: Record<string, string> = {
-        'ā':'a','á':'a','ǎ':'a','à':'a',
-        'ē':'e','é':'e','ě':'e','è':'e',
-        'ī':'i','í':'i','ǐ':'i','ì':'i',
-        'ō':'o','ó':'o','ǒ':'o','ò':'o',
-        'ū':'u','ú':'u','ǔ':'u','ù':'u',
-        'ǖ':'v','ǘ':'v','ǚ':'v','ǜ':'v',
-      };
-      return map[c] || c;
-    });
-    const isSameReading = itemNorm === cedictNorm;
-
-    const key = item.pinyin;
-    const existing = byPinyin.get(key);
-    if (existing) {
-      if (item.definitions) {
-        for (const d of item.definitions) {
-          if (!existing.definitions.includes(d)) existing.definitions.push(d);
-        }
-      }
-      if (item.tang && !existing.tang) {
-        existing.tang = item.tang.join(', ');
-      }
-    } else {
-      byPinyin.set(key, {
-        definitions: item.definitions ? [...item.definitions] : [],
-        tang: item.tang ? item.tang.join(', ') : undefined,
-        isSameReading,
-      });
-    }
-  }
-
-  const results: { pinyin: string; definitions: string[]; tang?: string }[] = [];
-  for (const [pinyin, data] of byPinyin) {
-    if (data.isSameReading) {
-      // Same reading as CEDICT: only show Tang data, skip duplicate definitions
-      if (data.tang) {
-        results.push({ pinyin, definitions: [], tang: data.tang });
-      }
-    } else {
-      // Different reading: filter out definitions already in CEDICT, show the rest
-      const uniqueDefs = data.definitions.filter(d => !cedictDefsSet.has(d.toLowerCase().trim()));
-      if (uniqueDefs.length > 0 || data.tang) {
-        results.push({ pinyin, definitions: uniqueDefs, tang: data.tang });
-      }
-    }
-  }
-
-  return results;
 }
 
 // ---- Character Tab ----

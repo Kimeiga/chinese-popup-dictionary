@@ -295,6 +295,22 @@ function sortEntries(entries: DictEntry[], dongEntries: DongWordEntry[]): DictEn
   });
 }
 
+/**
+ * Strip tone marks from pinyin for base-form comparison.
+ * "hé" → "he", "Tái wān" → "tai wan"
+ */
+function stripTones(pinyin: string): string {
+  const map: Record<string, string> = {
+    'ā':'a','á':'a','ǎ':'a','à':'a',
+    'ē':'e','é':'e','ě':'e','è':'e',
+    'ī':'i','í':'i','ǐ':'i','ì':'i',
+    'ō':'o','ó':'o','ǒ':'o','ò':'o',
+    'ū':'u','ú':'u','ǔ':'u','ù':'u',
+    'ǖ':'v','ǘ':'v','ǚ':'v','ǜ':'v',
+  };
+  return pinyin.toLowerCase().replace(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, c => map[c] || c);
+}
+
 function entryPriority(entry: DictEntry, primaryPinyin: string | null): number {
   // Variants always go to the bottom
   if (entry.variantOf) return 100;
@@ -303,9 +319,11 @@ function entryPriority(entry: DictEntry, primaryPinyin: string | null): number {
   if (entry.definitions.some(d => d.startsWith('surname '))) return 90;
 
   // If we have dong data, boost entries matching the primary pinyin
+  // Compare using tone-marked pinyin (entry.pinyin) since dong uses tone marks
   if (primaryPinyin) {
-    const entryPinyin = entry.pinyinRaw.toLowerCase();
-    if (entryPinyin === primaryPinyin) return 0;
+    const entryBase = stripTones(entry.pinyin);
+    const primaryBase = stripTones(primaryPinyin);
+    if (entryBase === primaryBase) return 0;
   }
 
   // Default: keep original order
