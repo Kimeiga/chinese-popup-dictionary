@@ -162,6 +162,13 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       font-style: italic;
       margin-bottom: 1px;
     }
+    .tz-variant {
+      font-size: 11px;
+      color: var(--tz-text2);
+      font-style: italic;
+      opacity: 0.8;
+      margin-bottom: 2px;
+    }
 
     /* Dong extra readings */
     .tz-dong-reading {

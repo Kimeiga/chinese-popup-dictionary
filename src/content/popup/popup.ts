@@ -360,6 +360,12 @@ function renderWordEntry(
     topWordsHtml = `<div class="tz-top-words">${chips}</div>`;
   }
 
+  // Variant label
+  let variantHtml = '';
+  if (entry.variantOf && showDefinitions) {
+    variantHtml = `<div class="tz-variant">${escapeHtml(entry.variantOf)}</div>`;
+  }
+
   const selCls = isSelected ? 'tz-selected' : '';
 
   return `<div class="tz-entry ${selCls}" data-idx="${index}">
@@ -370,6 +376,7 @@ function renderWordEntry(
       ${hskBadge}${freqHtml}
     </div>
     ${zhuyinHtml}
+    ${variantHtml}
     ${showDefinitions ? `<div class="tz-defs">${glossHtml}${defsHtml}${dongItemsHtml}</div>` : ''}
     ${topWordsHtml}
   </div>`;

@@ -12,6 +12,8 @@ export interface DictEntry {
   definitions: string[];
   /** Source dictionary identifier for extensibility */
   source: string;
+  /** If this entry was resolved from a variant, describes the variant relationship */
+  variantOf?: string;
 }
 
 /** Result of a dictionary lookup at a text position */

@@ -16,6 +16,7 @@ import {
   loadDongWords,
   loadDongChars,
   longestPrefixLookup,
+  lookupEntries,
   lookupDongWord,
   lookupDongChar,
   getMeta,
@@ -186,6 +187,74 @@ async function doLoadDongDicts(): Promise<void> {
   }
 }
 
+// ---- Variant Resolution ----
+
+// Matches: "variant of 臺灣|台湾[Tai2 wan1]" or "old variant of 來[lai2]"
+const VARIANT_RE = /^(.*?variant) of (?:(\S+?)\|)?(\S+?)\[([^\]]+)\]$/i;
+
+/**
+ * Check if a CEDICT entry is purely a variant reference (all definitions
+ * are "variant of X" with no real content). If so, return the parsed
+ * reference(s). Mixed entries (some variant, some real defs) are left as-is.
+ */
+function parseVariantRef(
+  entry: DictEntry
+): { type: string; simplified: string; traditional?: string; pinyin: string } | null {
+  // Only resolve if ALL definitions are variant references
+  for (const def of entry.definitions) {
+    if (!VARIANT_RE.test(def)) return null;
+  }
+
+  // Use the first variant reference
+  const match = entry.definitions[0].match(VARIANT_RE);
+  if (!match) return null;
+
+  return {
+    type: match[1],           // e.g. "variant", "old variant"
+    traditional: match[2],    // may be undefined if no TRAD|SIMP format
+    simplified: match[3],
+    pinyin: match[4],
+  };
+}
+
+/**
+ * Resolve variant entries by looking up the referenced word and merging
+ * in its definitions. The original entry keeps its own characters/pinyin
+ * but gets the real definitions + a variantOf label.
+ */
+async function resolveVariants(entries: DictEntry[]): Promise<DictEntry[]> {
+  const resolved: DictEntry[] = [];
+
+  for (const entry of entries) {
+    const ref = parseVariantRef(entry);
+    if (!ref) {
+      resolved.push(entry);
+      continue;
+    }
+
+    // Look up the referenced entry
+    let refEntries = await lookupEntries(ref.simplified, 'simplified');
+    if (refEntries.length === 0 && ref.traditional) {
+      refEntries = await lookupEntries(ref.traditional, 'traditional');
+    }
+
+    if (refEntries.length > 0) {
+      // Take the first matching entry's definitions
+      const refEntry = refEntries[0];
+      resolved.push({
+        ...entry,
+        definitions: refEntry.definitions,
+        variantOf: `${ref.type} of ${ref.simplified}`,
+      });
+    } else {
+      // Couldn't resolve — keep original
+      resolved.push(entry);
+    }
+  }
+
+  return resolved;
+}
+
 // ---- Message Handling ----
 
 async function handleLookup(
@@ -211,8 +280,11 @@ async function handleLookup(
     // Non-critical, continue without Dong data
   }
 
+  // Resolve variant entries (e.g. "variant of X") by following the reference
+  const resolvedEntries = await resolveVariants(result.entries.slice(0, maxResults));
+
   return {
-    entries: result.entries.slice(0, maxResults),
+    entries: resolvedEntries,
     matchLen: result.matchLen,
     matchText,
     dongEntries,
