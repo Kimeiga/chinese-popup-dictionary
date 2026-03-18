@@ -279,7 +279,7 @@ function renderFooter(): string {
 
   const hints = currentTab === 'word'
     ? `<span class="tz-key">c</span>word <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">e</span>entry <span class="tz-key">n</span>/<span class="tz-key">b</span>cycle <span class="tz-key">d</span>defs <span class="tz-key">[</span>/<span class="tz-key">]</span>len`
-    : `<span class="tz-key">c</span>char <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">d</span>defs`;
+    : `<span class="tz-key">c</span>char <span class="tz-key">r</span>pinyin <span class="tz-key">g</span>gloss <span class="tz-key">e</span>entry <span class="tz-key">d</span>defs`;
 
   return `<div class="tz-footer">${hints}</div>`;
 }
@@ -455,9 +455,43 @@ function renderCharacterTab(): string {
 
   let html = '<div class="tz-char-view">';
 
+  // Determine alternate character form (trad ↔ simp)
+  let altChar: string | null = null;
+  if (entry && currentSettings.charDisplay === 'both') {
+    // Check tradVariants/simpVariants from dong data
+    if (entry.tradVariants?.length) {
+      altChar = entry.tradVariants[0];
+    } else if (entry.simpVariants?.length) {
+      altChar = entry.simpVariants[0];
+    }
+    // Also check the word result entries for trad/simp pairs
+    if (!altChar && currentWordResult) {
+      for (const we of currentWordResult.entries) {
+        if (we.simplified.includes(char) && we.traditional !== we.simplified) {
+          // Find the corresponding character in the other form
+          const simpChars = [...we.simplified];
+          const tradChars = [...we.traditional];
+          const idx = simpChars.indexOf(char);
+          if (idx >= 0 && idx < tradChars.length && tradChars[idx] !== char) {
+            altChar = tradChars[idx];
+          } else {
+            const tidx = tradChars.indexOf(char);
+            if (tidx >= 0 && tidx < simpChars.length && simpChars[tidx] !== char) {
+              altChar = simpChars[tidx];
+            }
+          }
+          if (altChar) break;
+        }
+      }
+    }
+  }
+
   // Header: large char + meta on right
   html += `<div class="tz-char-header">`;
   html += `<span class="tz-char-big">${escapeHtml(char)}</span>`;
+  if (altChar) {
+    html += `<span class="tz-char-big tz-char-alt">${escapeHtml(altChar)}</span>`;
+  }
 
   if (entry) {
     html += `<div class="tz-char-info">`;

@@ -368,6 +368,22 @@ function copyGloss(): void {
 }
 
 function copyFullEntry(): void {
+  if (getCurrentTab() === 'character') {
+    const charResult = getCharResult();
+    if (!charResult?.entry) return;
+    const e = charResult.entry;
+    const parts: string[] = [e.char];
+    if (e.strokeCount) parts.push(`${e.strokeCount} strokes`);
+    if (e.gloss) parts.push(e.gloss);
+    if (e.hint) parts.push(e.hint);
+    if (e.pinyinFrequencies?.length) {
+      parts.push(e.pinyinFrequencies.map(pf => pf.pinyin).join(', '));
+    }
+    if (e.statistics?.hskLevel) parts.push(`HSK${e.statistics.hskLevel}`);
+    doCopy(parts.join(' — '), 'entry');
+    return;
+  }
+
   const result = getCurrentWordResult();
   if (!result) return;
   const idx = getSelectedIndex();

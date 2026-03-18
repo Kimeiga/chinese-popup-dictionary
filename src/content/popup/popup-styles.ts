@@ -258,6 +258,10 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       color: var(--tz-hanzi-color);
       line-height: 1.1;
     }
+    .tz-char-alt {
+      color: var(--tz-text2);
+      font-weight: 400;
+    }
     .tz-char-info {
       flex: 1;
       padding-top: 4px;
