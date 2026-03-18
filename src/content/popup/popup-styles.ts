@@ -128,6 +128,9 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       border-bottom: 1px solid var(--tz-divider);
     }
     .tz-entry:last-of-type { border-bottom: none; }
+    .tz-match-sep {
+      border-bottom: 2px solid var(--tz-divider);
+    }
     .tz-selected {
       background: var(--tz-sel);
       border-left: 2px solid var(--tz-sel-border);

@@ -178,6 +178,36 @@ export async function longestPrefixLookup(
 }
 
 /**
+ * Find all prefix matches at every substring length.
+ * Returns groups sorted longest-first, each with their match length.
+ * The longest match determines highlight length.
+ */
+export async function allPrefixLookup(
+  text: string,
+  maxLen: number = 10
+): Promise<{ groups: { entries: DictEntry[]; matchLen: number }[]; matchLen: number } | null> {
+  const searchLen = Math.min(text.length, maxLen);
+  const groups: { entries: DictEntry[]; matchLen: number }[] = [];
+
+  for (let len = searchLen; len >= 1; len--) {
+    const candidate = text.substring(0, len);
+
+    let entries = await lookupEntries(candidate, 'simplified');
+    if (entries.length === 0) {
+      entries = await lookupEntries(candidate, 'traditional');
+    }
+
+    if (entries.length > 0) {
+      groups.push({ entries: deduplicateEntries(entries), matchLen: len });
+    }
+  }
+
+  if (groups.length === 0) return null;
+
+  return { groups, matchLen: groups[0].matchLen };
+}
+
+/**
  * Remove duplicate entries that share the same simplified + traditional + pinyin.
  * Guards against double-inserts from race conditions during dictionary loading.
  */

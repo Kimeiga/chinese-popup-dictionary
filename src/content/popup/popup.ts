@@ -291,12 +291,43 @@ function renderWordTab(): string {
 
   const entries = currentWordResult.entries.slice(0, currentSettings.maxEntries);
   const dongEntries = currentWordResult.dongEntries;
-  const dongEntry = dongEntries.length > 0 ? dongEntries[0] : null;
+  const primaryDong = dongEntries.length > 0 ? dongEntries[0] : null;
   const selectedIdx = copyState.selectedIndex;
+  const longestMatchLen = currentWordResult.matchLen;
 
-  return entries
-    .map((entry, i) => renderWordEntry(entry, dongEntry, i, i === selectedIdx, entries.length))
-    .join('');
+  // Build dong lookup map: dongEntriesBySimp maps simplified text → dong entry
+  // The primary dong entry is for the longest match; sub-matches get their own from the result
+  const dongBySimp = new Map<string, DongWordEntry>();
+  if (primaryDong) {
+    dongBySimp.set(primaryDong.simp, primaryDong);
+  }
+  // Also index any additional dong entries
+  for (const de of dongEntries) {
+    if (!dongBySimp.has(de.simp)) {
+      dongBySimp.set(de.simp, de);
+    }
+  }
+
+  let html = '';
+  let prevMatchLen: number | undefined;
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    const entryMatchLen = entry.matchLen || longestMatchLen;
+
+    // Insert separator between different match-length groups
+    if (prevMatchLen !== undefined && entryMatchLen !== prevMatchLen) {
+      html += `<div class="tz-match-sep"></div>`;
+    }
+    prevMatchLen = entryMatchLen;
+
+    // Use dong entry matching this entry's word, not always the longest match's dong
+    const dong = dongBySimp.get(entry.simplified) || null;
+
+    html += renderWordEntry(entry, dong, i, i === selectedIdx, entries.length);
+  }
+
+  return html;
 }
 
 function renderWordEntry(

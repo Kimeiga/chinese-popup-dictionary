@@ -15,7 +15,7 @@ import {
   loadDictionary,
   loadDongWords,
   loadDongChars,
-  longestPrefixLookup,
+  allPrefixLookup,
   lookupEntries,
   lookupDongWord,
   lookupDongChar,
@@ -338,7 +338,7 @@ async function handleLookup(
 ): Promise<WordLookupResult | null> {
   await ensureDictLoaded();
 
-  const result = await longestPrefixLookup(text, 10);
+  const result = await allPrefixLookup(text, 10);
   if (!result) return null;
 
   const matchText = text.substring(0, result.matchLen);
@@ -349,26 +349,52 @@ async function handleLookup(
   try {
     const dongLoaded = await isDongLoaded();
     if (dongLoaded) {
-      dongEntries = await lookupDongWord(matchText);
+      // Fetch dong data for all unique match texts across groups
+      const uniqueTexts = new Set(result.groups.map(g => text.substring(0, g.matchLen)));
+      const dongResults = await Promise.all(
+        [...uniqueTexts].map(t => lookupDongWord(t))
+      );
+      dongEntries = dongResults.flat();
     }
   } catch {
     // Non-critical, continue without Dong data
   }
 
-  // Resolve variant entries (e.g. "variant of X") and filter self-references
-  let resolvedEntries = await resolveVariants(
-    result.entries.slice(0, maxResults + 5), // extra buffer since some get filtered
-    matchText
-  );
+  // Build dong lookup by simplified for sorting
+  const dongBySimp = new Map<string, DongWordEntry[]>();
+  for (const de of dongEntries) {
+    const existing = dongBySimp.get(de.simp) || [];
+    existing.push(de);
+    dongBySimp.set(de.simp, existing);
+  }
 
-  // Sort by frequency: primary pronunciation first, surnames/variants last
-  resolvedEntries = sortEntries(resolvedEntries, dongEntries);
+  // Process each group: resolve variants, sort, tag with matchLen
+  const allEntries: DictEntry[] = [];
+  for (const group of result.groups) {
+    const groupMatchText = text.substring(0, group.matchLen);
 
-  // Apply limit after filtering and sorting
-  resolvedEntries = resolvedEntries.slice(0, maxResults);
+    let resolved = await resolveVariants(
+      group.entries.slice(0, maxResults + 5),
+      groupMatchText
+    );
+
+    // Sort each group by dong data frequency
+    const groupDong = dongBySimp.get(groupMatchText) || [];
+    resolved = sortEntries(resolved, groupDong);
+
+    // Tag each entry with its match length
+    for (const entry of resolved) {
+      entry.matchLen = group.matchLen;
+    }
+
+    allEntries.push(...resolved);
+  }
+
+  // Apply limit after collecting all groups
+  const limitedEntries = allEntries.slice(0, maxResults);
 
   return {
-    entries: resolvedEntries,
+    entries: limitedEntries,
     matchLen: result.matchLen,
     matchText,
     dongEntries,

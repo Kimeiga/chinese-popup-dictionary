@@ -14,6 +14,8 @@ export interface DictEntry {
   source: string;
   /** If this entry was resolved from a variant, describes the variant relationship */
   variantOf?: string;
+  /** Match length for this entry (when showing sub-word matches) */
+  matchLen?: number;
 }
 
 /** Result of a dictionary lookup at a text position */
