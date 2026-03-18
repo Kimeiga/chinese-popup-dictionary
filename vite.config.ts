@@ -31,6 +31,16 @@ function copyStaticAssets(): import('vite').Plugin {
         cpSync(dictFile, resolve(dist, 'assets/cedict.json'));
       }
 
+      const dongWordsFile = resolve(__dirname, 'data/dong-words.json');
+      if (existsSync(dongWordsFile)) {
+        cpSync(dongWordsFile, resolve(dist, 'assets/dong-words.json'));
+      }
+
+      const dongCharsFile = resolve(__dirname, 'data/dong-chars.json');
+      if (existsSync(dongCharsFile)) {
+        cpSync(dongCharsFile, resolve(dist, 'assets/dong-chars.json'));
+      }
+
       cpSync(resolve(__dirname, 'src/options/options.html'), resolve(dist, 'options/options.html'));
     },
   };

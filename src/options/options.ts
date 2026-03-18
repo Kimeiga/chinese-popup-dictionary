@@ -7,7 +7,7 @@
 import type { ExtensionSettings } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/types';
 
-const STORAGE_KEY = 'tenzhong_settings';
+const STORAGE_KEY = 'zitan_settings';
 
 const $$ = <T extends HTMLElement>(id: string): T =>
   document.getElementById(id) as T;
@@ -28,6 +28,10 @@ async function saveSettings(
   return new Promise((resolve) => {
     chrome.storage.sync.set({ [STORAGE_KEY]: updated }, () => {
       showSaved();
+      // If theme changed, apply to settings page too
+      if (partial.theme !== undefined) {
+        applyPageTheme(partial.theme);
+      }
       resolve();
     });
   });
@@ -39,8 +43,32 @@ function showSaved(): void {
   setTimeout(() => el.classList.remove('show'), 1500);
 }
 
+function applyPageTheme(theme: ExtensionSettings['theme']): void {
+  if (theme === 'light') {
+    document.body.classList.add('light');
+  } else if (theme === 'dark') {
+    document.body.classList.remove('light');
+  } else {
+    // Auto: check system preference
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      document.body.classList.add('light');
+    } else {
+      document.body.classList.remove('light');
+    }
+  }
+}
+
 async function init(): Promise<void> {
   const s = await loadSettings();
+
+  // Apply theme to settings page
+  applyPageTheme(s.theme);
+
+  // Listen for system theme changes when in auto mode
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', async () => {
+    const current = await loadSettings();
+    if (current.theme === 'auto') applyPageTheme('auto');
+  });
 
   // Populate form
   ($$<HTMLSelectElement>('charDisplay')).value = s.charDisplay;
@@ -55,8 +83,8 @@ async function init(): Promise<void> {
     ($$<HTMLInputElement>(`tone${i + 1}`)).value = s.toneColors[i];
   }
 
-  // Blacklist
-  ($$<HTMLTextAreaElement>('blacklist')).value = s.blacklist.join('\n');
+  // Block list
+  ($$<HTMLTextAreaElement>('blocklist')).value = s.blocklist.join('\n');
 
   // Event listeners
   $$('charDisplay').addEventListener('change', (e) =>
@@ -102,13 +130,13 @@ async function init(): Promise<void> {
     });
   }
 
-  $$('blacklist').addEventListener('change', (e) => {
+  $$('blocklist').addEventListener('change', (e) => {
     const val = (e.target as HTMLTextAreaElement).value;
     const list = val
       .split('\n')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
-    saveSettings({ blacklist: list });
+    saveSettings({ blocklist: list });
   });
 }
 

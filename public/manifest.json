@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "TenZhong Chinese Dictionary",
+  "name": "ZiTan Chinese Dictionary",
   "version": "1.0.0",
   "description": "A fast, modern Chinese pop-up dictionary. Hover over Chinese text to see definitions, pinyin, and tone colors instantly.",
   "permissions": [
@@ -25,11 +25,11 @@
     }
   ],
   "action": {
-    "default_title": "TenZhong Chinese Dictionary",
+    "default_title": "ZiTan Chinese Dictionary",
     "default_icon": {
-      "16": "icons/icon16.svg",
-      "48": "icons/icon48.svg",
-      "128": "icons/icon128.svg"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
     }
   },
   "options_ui": {
@@ -37,9 +37,9 @@
     "open_in_tab": true
   },
   "icons": {
-    "16": "icons/icon16.svg",
-    "48": "icons/icon48.svg",
-    "128": "icons/icon128.svg"
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "web_accessible_resources": [
     {

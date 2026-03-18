@@ -3,175 +3,310 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TenZhong Settings</title>
+  <title>ZiTan Settings</title>
   <style>
+    :root {
+      --bg: #1d1a19;
+      --bg2: #2a2725;
+      --bg3: #353130;
+      --text: #f0ecea;
+      --text2: #a09c9a;
+      --border: #504c4b;
+      --accent: #4bbffb;
+      --accent-hover: #6dccfc;
+      --success: #7beb7e;
+      --card-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+    .light {
+      --bg: #f3f4f6;
+      --bg2: #ffffff;
+      --bg3: #f9fafb;
+      --text: #1a1a2e;
+      --text2: #6b7280;
+      --border: #d1d5db;
+      --accent: #2563eb;
+      --accent-hover: #3b82f6;
+      --success: #16a34a;
+      --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f5;
-      color: #333;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.6;
-      padding: 20px;
+      padding: 24px 16px;
+      transition: background 0.2s, color 0.2s;
     }
+
     .container {
-      max-width: 600px;
+      max-width: 640px;
       margin: 0 auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      padding: 32px;
     }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 8px;
-      color: #1a1a2e;
-    }
-    .subtitle {
-      color: #777;
-      margin-bottom: 28px;
-      font-size: 14px;
-    }
-    .section {
+
+    .header {
       margin-bottom: 24px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid #eee;
     }
-    .section:last-child { border-bottom: none; }
-    .section h2 {
-      font-size: 16px;
-      margin-bottom: 12px;
-      color: #555;
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header h1 .logo-icon {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .header .subtitle {
+      color: var(--text2);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    .saved-badge {
+      display: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--success);
+      background: rgba(123, 235, 126, 0.1);
+      padding: 2px 10px;
+      border-radius: 12px;
+      margin-left: 8px;
+    }
+    .saved-badge.show { display: inline-block; }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
+      color: var(--text2);
+      padding: 12px 16px 0;
     }
+
     .field {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
     }
-    .field label {
+    .field:last-child { border-bottom: none; }
+
+    .field-label {
       font-size: 14px;
       flex: 1;
     }
-    .field select, .field input[type="text"] {
-      padding: 6px 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 14px;
-      background: #fafafa;
+    .field-desc {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 1px;
     }
+
+    select {
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--bg3);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    select:focus { border-color: var(--accent); }
+
+    /* Toggle switch */
     .toggle {
       position: relative;
-      width: 44px;
-      height: 24px;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
     }
     .toggle input {
       opacity: 0;
       width: 0;
       height: 0;
+      position: absolute;
     }
     .toggle .slider {
       position: absolute;
       cursor: pointer;
       inset: 0;
-      background: #ccc;
-      border-radius: 24px;
+      background: var(--border);
+      border-radius: 22px;
       transition: 0.2s;
     }
     .toggle .slider::before {
       content: "";
       position: absolute;
-      height: 18px;
-      width: 18px;
+      height: 16px;
+      width: 16px;
       left: 3px;
       bottom: 3px;
       background: white;
       border-radius: 50%;
       transition: 0.2s;
     }
-    .toggle input:checked + .slider { background: #3498db; }
-    .toggle input:checked + .slider::before { transform: translateX(20px); }
+    .toggle input:checked + .slider { background: var(--accent); }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+
+    /* Tone color pickers */
     .tone-colors {
       display: flex;
-      gap: 8px;
-      margin-top: 8px;
+      gap: 6px;
+      padding: 8px 16px 12px;
     }
     .tone-color {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
     .tone-color input[type="color"] {
-      width: 36px;
-      height: 28px;
-      border: 1px solid #ddd;
+      width: 32px;
+      height: 26px;
+      border: 1px solid var(--border);
       border-radius: 4px;
       cursor: pointer;
       padding: 0;
+      background: transparent;
     }
     .tone-color span {
-      font-size: 11px;
-      color: #999;
+      font-size: 10px;
+      color: var(--text2);
     }
+
+    /* Block list textarea */
     textarea {
       width: 100%;
       padding: 8px 12px;
-      border: 1px solid #ddd;
+      border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 13px;
       font-family: monospace;
       resize: vertical;
-      min-height: 60px;
+      min-height: 56px;
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
     }
+    textarea:focus { border-color: var(--accent); }
+
+    .textarea-wrap {
+      padding: 8px 16px 12px;
+    }
+
     .hint {
-      font-size: 12px;
-      color: #999;
+      font-size: 11px;
+      color: var(--text2);
       margin-top: 4px;
+      padding: 0 16px 10px;
     }
-    .saved {
-      display: none;
-      color: #27ae60;
-      font-size: 13px;
-      margin-left: 8px;
+
+    /* Keyboard shortcuts reference */
+    .shortcuts {
+      padding: 8px 16px 12px;
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.8;
     }
-    .saved.show { display: inline; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #1a1a2e; color: #e0e0e0; }
-      .container { background: #2a2a3e; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
-      h1 { color: #e0e0e0; }
-      .section { border-color: #444; }
-      .section h2 { color: #aaa; }
-      .field select, .field input[type="text"], textarea { background: #1e1e2e; border-color: #555; color: #e0e0e0; }
+    .shortcuts .row {
+      display: flex;
+      gap: 8px;
+    }
+    .shortcuts kbd {
+      display: inline-block;
+      min-width: 18px;
+      text-align: center;
+      padding: 0 4px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .shortcuts .keys {
+      width: 70px;
+      flex-shrink: 0;
+      text-align: right;
+    }
+
+    /* Test text section */
+    .test-text {
+      padding: 12px 16px;
+      font-size: 16px;
+      line-height: 2;
+      color: var(--text);
+    }
+    .test-text p {
+      margin-bottom: 8px;
+    }
+    .test-text .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text2);
+      margin-bottom: 2px;
+    }
+
+    .version {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text2);
+      opacity: 0.5;
+      margin-top: 16px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>TenZhong Settings <span id="saved" class="saved">Saved!</span></h1>
-    <p class="subtitle">Chinese Pop-up Dictionary</p>
+    <div class="header">
+      <h1>
+        <svg class="logo-icon" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+          <rect width="128" height="128" rx="24" fill="#1d1a19"/>
+          <text x="64" y="92" text-anchor="middle" font-family="-apple-system, 'Noto Sans SC', sans-serif" font-size="80" font-weight="700" fill="#4bbffb">探</text>
+        </svg>
+        ZiTan
+        <span id="saved" class="saved-badge">Saved</span>
+      </h1>
+      <p class="subtitle">Chinese Pop-up Dictionary</p>
+    </div>
 
-    <div class="section">
-      <h2>Display</h2>
+    <!-- Appearance -->
+    <div class="card">
+      <div class="card-title">Appearance</div>
       <div class="field">
-        <label>Character display</label>
-        <select id="charDisplay">
-          <option value="simplified">Simplified only</option>
-          <option value="traditional">Traditional only</option>
-          <option value="both">Both</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Theme</label>
+        <div>
+          <div class="field-label">Theme</div>
+          <div class="field-desc">Popup and settings page color scheme</div>
+        </div>
         <select id="theme">
-          <option value="light">Light</option>
           <option value="dark">Dark</option>
-          <option value="auto">Auto (match system)</option>
+          <option value="light">Light</option>
+          <option value="auto">Auto (system)</option>
         </select>
       </div>
       <div class="field">
-        <label>Font size</label>
+        <div class="field-label">Font size</div>
         <select id="fontSize">
           <option value="small">Small</option>
           <option value="normal">Normal</option>
@@ -179,7 +314,7 @@
         </select>
       </div>
       <div class="field">
-        <label>Max entries in popup</label>
+        <div class="field-label">Max entries in popup</div>
         <select id="maxEntries">
           <option value="3">3</option>
           <option value="5">5</option>
@@ -189,39 +324,98 @@
       </div>
     </div>
 
-    <div class="section">
-      <h2>Pinyin & Tones</h2>
+    <!-- Characters & Pinyin -->
+    <div class="card">
+      <div class="card-title">Characters & Pinyin</div>
       <div class="field">
-        <label>Show tone colors</label>
+        <div class="field-label">Character display</div>
+        <select id="charDisplay">
+          <option value="simplified">Simplified only</option>
+          <option value="traditional">Traditional only</option>
+          <option value="both">Both (simp + trad)</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Tone colors on pinyin</div>
         <label class="toggle">
           <input type="checkbox" id="showToneColors" />
           <span class="slider"></span>
         </label>
       </div>
       <div class="field">
-        <label>Show Zhuyin (Bopomofo)</label>
+        <div class="field-label">Show Zhuyin (Bopomofo)</div>
         <label class="toggle">
           <input type="checkbox" id="showZhuyin" />
           <span class="slider"></span>
         </label>
       </div>
-      <div>
-        <label>Tone colors</label>
-        <div class="tone-colors" id="toneColors">
-          <div class="tone-color"><input type="color" id="tone1" /><span>1st</span></div>
-          <div class="tone-color"><input type="color" id="tone2" /><span>2nd</span></div>
-          <div class="tone-color"><input type="color" id="tone3" /><span>3rd</span></div>
-          <div class="tone-color"><input type="color" id="tone4" /><span>4th</span></div>
-          <div class="tone-color"><input type="color" id="tone5" /><span>Neutral</span></div>
-        </div>
+      <div class="tone-colors" id="toneColors">
+        <div class="tone-color"><input type="color" id="tone1" /><span>1st</span></div>
+        <div class="tone-color"><input type="color" id="tone2" /><span>2nd</span></div>
+        <div class="tone-color"><input type="color" id="tone3" /><span>3rd</span></div>
+        <div class="tone-color"><input type="color" id="tone4" /><span>4th</span></div>
+        <div class="tone-color"><input type="color" id="tone5" /><span>Neutral</span></div>
       </div>
     </div>
 
-    <div class="section">
-      <h2>Blacklist</h2>
-      <textarea id="blacklist" placeholder="example.com&#10;another-site.org"></textarea>
+    <!-- Block List -->
+    <div class="card">
+      <div class="card-title">Block List</div>
+      <div class="textarea-wrap">
+        <textarea id="blocklist" placeholder="example.com&#10;another-site.org"></textarea>
+      </div>
       <p class="hint">One domain per line. The dictionary will be disabled on these sites.</p>
     </div>
+
+    <!-- Keyboard Shortcuts -->
+    <div class="card">
+      <div class="card-title">Keyboard Shortcuts</div>
+      <div class="shortcuts">
+        <div class="row"><span class="keys"><kbd>Shift</kbd></span> switch Word / Char tab</div>
+        <div class="row"><span class="keys"><kbd>c</kbd></span> copy word (or character)</div>
+        <div class="row"><span class="keys"><kbd>t</kbd></span> copy traditional</div>
+        <div class="row"><span class="keys"><kbd>r</kbd></span> copy pinyin</div>
+        <div class="row"><span class="keys"><kbd>g</kbd></span> copy gloss</div>
+        <div class="row"><span class="keys"><kbd>e</kbd></span> copy full entry</div>
+        <div class="row"><span class="keys"><kbd>n</kbd> <kbd>b</kbd></span> next / prev entry</div>
+        <div class="row"><span class="keys"><kbd>1</kbd>-<kbd>9</kbd></span> select entry</div>
+        <div class="row"><span class="keys"><kbd>d</kbd></span> toggle definitions</div>
+        <div class="row"><span class="keys"><kbd>[</kbd> <kbd>]</kbd></span> shrink / extend match</div>
+        <div class="row"><span class="keys"><kbd>Esc</kbd></span> close popup</div>
+      </div>
+    </div>
+
+    <!-- Test Text -->
+    <div class="card">
+      <div class="card-title">Test Text</div>
+      <div class="test-text">
+        <p class="label">Common words</p>
+        <p>中国是一个历史悠久的国家。学习中文很有意思。</p>
+
+        <p class="label">HSK 1-3 (Beginner)</p>
+        <p>你好！我是学生。今天天气很好，我想去图书馆看书。</p>
+
+        <p class="label">HSK 4-6 (Intermediate)</p>
+        <p>随着科技的发展，人工智能已经深刻地影响了我们的日常生活。</p>
+
+        <p class="label">HSK 7-9 (Advanced)</p>
+        <p>这篇论文探讨了量子纠缠现象在通信领域的潜在应用前景。</p>
+
+        <p class="label">Classical / Literary</p>
+        <p>学而不思则罔，思而不学则殆。三人行，必有我师焉。</p>
+
+        <p class="label">Mixed traditional &amp; simplified</p>
+        <p>龍飛鳳舞 — 龙飞凤舞。書法藝術 — 书法艺术。</p>
+
+        <p class="label">Single characters</p>
+        <p>人 大 学 国 中 日 月 山 水 火 木 金 土</p>
+
+        <p class="label">Long compounds</p>
+        <p>中华人民共和国 不可思议 莫名其妙 自言自语 一心一意</p>
+      </div>
+    </div>
+
+    <div class="version">ZiTan v1.0.0</div>
   </div>
 
   <script src="options.js"></script>

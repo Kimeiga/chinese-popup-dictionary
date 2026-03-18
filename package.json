@@ -1,5 +1,5 @@
 {
-  "name": "tenzhong-chinese-dictionary",
+  "name": "zitan-chinese-dictionary",
   "version": "1.0.0",
   "description": "A fast, modern Chinese pop-up dictionary Chrome extension",
   "private": true,
@@ -8,13 +8,15 @@
     "dev": "vite build --watch --mode development",
     "build": "vite build --mode production",
     "build:dict": "npx tsx src/scripts/build-dict.ts",
+    "build:dong": "npx tsx src/scripts/build-dong-dict.ts",
+    "build:icons": "npx tsx scripts/generate-icons.ts",
     "lint": "eslint src/",
     "format": "prettier --write 'src/**/*.{ts,tsx,html,css}'",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:all": "npm run test && npm run test:e2e",
-    "package": "npm run build && cd dist && zip -r ../tenzhong.zip ."
+    "package": "npm run build && cd dist && zip -r ../zitan.zip ."
   },
   "devDependencies": {
     "@types/chrome": "^0.1.38",

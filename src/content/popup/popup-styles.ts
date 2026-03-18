@@ -1,40 +1,42 @@
 /**
  * Shadow DOM popup styles.
- * Injected into the shadow root to prevent host-page CSS from affecting us.
+ * Compact, information-dense layout optimized for dictionary popups.
+ * Dark mode inspired by 10ten Japanese Reader.
  */
 
 export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
   const lightVars = `
     --tz-bg: #ffffff;
-    --tz-bg-secondary: #f8f9fa;
+    --tz-bg2: #f5f6f8;
     --tz-text: #1a1a2e;
-    --tz-text-secondary: #555;
-    --tz-border: #e0e0e0;
+    --tz-text2: #666;
+    --tz-border: #d8d8d8;
     --tz-shadow: rgba(0, 0, 0, 0.15);
-    --tz-divider: #eee;
+    --tz-divider: #eaeaea;
+    --tz-sel: rgba(66, 133, 244, 0.08);
+    --tz-sel-border: rgba(66, 133, 244, 0.35);
+    --tz-hanzi-color: #1a1a2e;
+    --tz-accent: #2563eb;
   `;
 
   const darkVars = `
-    --tz-bg: #1e1e2e;
-    --tz-bg-secondary: #2a2a3e;
-    --tz-text: #e0e0e0;
-    --tz-text-secondary: #aaa;
-    --tz-border: #444;
-    --tz-shadow: rgba(0, 0, 0, 0.4);
-    --tz-divider: #333;
+    --tz-bg: #1d1a19;
+    --tz-bg2: #2a2725;
+    --tz-text: #f0ecea;
+    --tz-text2: #a09c9a;
+    --tz-border: #504c4b;
+    --tz-shadow: rgba(0, 0, 0, 0.5);
+    --tz-divider: #3e3a39;
+    --tz-sel: rgba(75, 191, 251, 0.1);
+    --tz-sel-border: rgba(75, 191, 251, 0.4);
+    --tz-hanzi-color: #ffffff;
+    --tz-accent: #4bbffb;
   `;
 
   const themeVars =
-    theme === 'dark'
-      ? darkVars
-      : theme === 'light'
-        ? lightVars
-        : `
-    ${lightVars}
-    @media (prefers-color-scheme: dark) {
-      :host { ${darkVars} }
-    }
-  `;
+    theme === 'dark' ? darkVars
+      : theme === 'light' ? lightVars
+        : lightVars;
 
   return `
     :host {
@@ -43,9 +45,8 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       z-index: 2147483647;
       pointer-events: none;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "Microsoft YaHei", sans-serif;
-      ${theme !== 'auto' ? themeVars : lightVars}
+      ${themeVars}
     }
-
     ${theme === 'auto' ? `@media (prefers-color-scheme: dark) { :host { ${darkVars} } }` : ''}
 
     .tz-popup {
@@ -54,102 +55,317 @@ export function getPopupStyles(theme: 'light' | 'dark' | 'auto'): string {
       background: var(--tz-bg);
       border: 1px solid var(--tz-border);
       border-radius: 8px;
-      box-shadow: 0 4px 20px var(--tz-shadow);
-      max-width: 420px;
-      min-width: 200px;
+      box-shadow: 0 4px 24px var(--tz-shadow);
+      max-width: 440px;
+      min-width: 220px;
       padding: 0;
       overflow: hidden;
-      animation: tz-fadeIn 0.12s ease-out;
+      animation: tz-in 0.1s ease-out;
+      color: var(--tz-text);
     }
-
-    @keyframes tz-fadeIn {
+    @keyframes tz-in {
       from { opacity: 0; transform: translateY(2px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .tz-entry {
-      padding: 10px 14px;
+    /* Tab bar */
+    .tz-tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 3px 8px;
+      background: var(--tz-bg2);
       border-bottom: 1px solid var(--tz-divider);
     }
-
-    .tz-entry:last-child {
-      border-bottom: none;
+    .tz-tab {
+      all: unset;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--tz-text2);
+      border-radius: 3px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .tz-tab:hover { background: var(--tz-border); }
+    .tz-tab-active {
+      color: var(--tz-text);
+      background: var(--tz-bg);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .tz-tab-hint {
+      margin-left: auto;
+      font-size: 9px;
+      color: var(--tz-text2);
+      opacity: 0.5;
+      padding: 1px 4px;
+      border: 1px solid var(--tz-divider);
+      border-radius: 2px;
     }
 
-    .tz-hanzi-row {
+    /* Entries */
+    .tz-entry {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--tz-divider);
+    }
+    .tz-entry:last-of-type { border-bottom: none; }
+    .tz-selected {
+      background: var(--tz-sel);
+      border-left: 2px solid var(--tz-sel-border);
+      padding-left: 10px;
+    }
+
+    /* Word entry header row: hanzi + pinyin + badges inline */
+    .tz-row {
       display: flex;
       align-items: baseline;
-      gap: 8px;
-      margin-bottom: 4px;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 2px;
+    }
+    .tz-hanzi {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--tz-hanzi-color);
+      line-height: 1.2;
+    }
+    .tz-hanzi-alt {
+      font-size: 16px;
+      color: var(--tz-text2);
+    }
+    .tz-pinyin, .tz-py {
+      font-size: 14px;
+      letter-spacing: 0.2px;
+    }
+    .tz-py { margin-right: 1px; }
+    .tz-zhuyin {
+      font-size: 12px;
+      color: var(--tz-text2);
+      margin-bottom: 2px;
     }
 
-    .tz-hanzi {
-      font-size: 24px;
+    /* Definitions */
+    .tz-defs {
+      font-size: 13px;
+      color: var(--tz-text);
+      line-height: 1.45;
+    }
+    .tz-def { margin: 0; }
+    .tz-def-num {
+      color: var(--tz-text2);
+      font-size: 11px;
+      margin-right: 3px;
+    }
+    .tz-gloss {
+      font-size: 12px;
+      color: var(--tz-text2);
+      font-style: italic;
+      margin-bottom: 1px;
+    }
+
+    /* Dong extra readings */
+    .tz-dong-reading {
+      font-size: 12px;
+      color: var(--tz-text2);
+      margin-top: 2px;
+      padding-top: 2px;
+      border-top: 1px dotted var(--tz-divider);
+    }
+    .tz-dong-pinyin {
       font-weight: 600;
       color: var(--tz-text);
-      line-height: 1.3;
+      margin-right: 4px;
+    }
+    .tz-tang {
+      font-size: 11px;
+      opacity: 0.7;
+      font-style: italic;
     }
 
-    .tz-hanzi-alt {
-      font-size: 18px;
-      color: var(--tz-text-secondary);
-      line-height: 1.3;
+    /* HSK badges */
+    .tz-hsk {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 0 4px;
+      border-radius: 2px;
+      color: #fff;
+      white-space: nowrap;
+      line-height: 1.6;
+      vertical-align: middle;
+    }
+    .tz-hsk-1 { background: #43a047; }
+    .tz-hsk-2 { background: #7cb342; color: #fff; }
+    .tz-hsk-3 { background: #f9a825; color: #1a1a1a; }
+    .tz-hsk-4 { background: #ef6c00; }
+    .tz-hsk-5 { background: #e53935; }
+    .tz-hsk-6 { background: #c62828; }
+    .tz-hsk-7, .tz-hsk-8, .tz-hsk-9 { background: #7b1fa2; }
+
+    .tz-freq {
+      font-size: 10px;
+      color: var(--tz-text2);
+      opacity: 0.6;
     }
 
-    .tz-pinyin {
-      font-size: 15px;
-      margin-bottom: 4px;
-      letter-spacing: 0.3px;
+    /* Top words chips */
+    .tz-top-words, .tz-char-words {
+      margin-top: 3px;
+      line-height: 1.7;
     }
-
-    .tz-pinyin-syllable {
-      margin-right: 2px;
-    }
-
-    .tz-zhuyin {
+    .tz-chip {
+      display: inline-block;
       font-size: 13px;
-      color: var(--tz-text-secondary);
-      margin-bottom: 4px;
+      background: var(--tz-bg2);
+      border: 1px solid var(--tz-divider);
+      padding: 0 5px;
+      border-radius: 3px;
+      margin: 1px 2px 1px 0;
+      color: var(--tz-text);
+    }
+    .tz-chip-g {
+      color: var(--tz-text2);
+      font-size: 12px;
+    }
+    .tz-chip-pct {
+      color: var(--tz-text2);
+      font-size: 9px;
+      opacity: 0.6;
     }
 
-    .tz-definitions {
+    /* Character view */
+    .tz-char-view {
+      padding: 8px 12px;
+    }
+    .tz-char-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .tz-char-big {
+      font-size: 44px;
+      font-weight: 600;
+      color: var(--tz-hanzi-color);
+      line-height: 1.1;
+    }
+    .tz-char-info {
+      flex: 1;
+      padding-top: 4px;
+    }
+    .tz-char-strokes {
+      font-size: 13px;
+      color: var(--tz-text2);
+      margin-bottom: 2px;
+    }
+    .tz-char-badges {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2px;
+    }
+    .tz-char-code {
+      font-size: 10px;
+      color: var(--tz-text2);
+      opacity: 0.5;
+      font-family: monospace;
+    }
+    .tz-char-gloss {
       font-size: 14px;
+      color: var(--tz-text);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    .tz-char-variant {
+      font-size: 11px;
+      color: var(--tz-text2);
+      margin-bottom: 3px;
+    }
+    .tz-char-pf {
+      font-size: 12px;
+      color: var(--tz-text2);
+      margin-bottom: 3px;
+    }
+    .tz-freq-count {
+      font-size: 10px;
+      opacity: 0.6;
+    }
+    .tz-char-comps {
+      font-size: 12px;
+      color: var(--tz-text2);
+      margin-bottom: 3px;
+      line-height: 1.4;
+    }
+    .tz-comp {
+      white-space: nowrap;
+    }
+    .tz-comp-type {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    .tz-char-hint {
+      font-size: 12px;
+      color: var(--tz-text2);
+      font-style: italic;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+    .tz-char-hist {
+      font-size: 11px;
+      color: var(--tz-text2);
+      margin-bottom: 3px;
+      line-height: 1.5;
+    }
+    .tz-empty {
+      text-align: center;
+      color: var(--tz-text2);
+      font-size: 12px;
+      padding: 6px;
+    }
+
+    /* Footer / keyboard hints */
+    .tz-footer {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      padding: 3px 8px;
+      background: var(--tz-bg2);
+      border-top: 1px solid var(--tz-divider);
+      font-size: 10px;
+      color: var(--tz-text2);
+      opacity: 0.8;
+    }
+    .tz-copy-flash {
+      justify-content: center;
+      font-weight: 600;
+      color: #4CAF50;
+      opacity: 1;
+    }
+    .tz-key {
+      display: inline-block;
+      padding: 0 3px;
+      background: var(--tz-bg);
+      border: 1px solid var(--tz-border);
+      border-radius: 2px;
+      font-size: 9px;
+      font-family: monospace;
+      font-weight: 600;
       color: var(--tz-text);
       line-height: 1.5;
     }
 
-    .tz-def-item {
-      margin: 0;
-      padding: 0;
-    }
-
-    .tz-def-item::before {
-      content: none;
-    }
-
-    .tz-def-num {
-      color: var(--tz-text-secondary);
-      font-size: 12px;
-      margin-right: 4px;
-    }
-
     /* Font size variants */
-    :host(.font-small) .tz-hanzi { font-size: 20px; }
-    :host(.font-small) .tz-pinyin { font-size: 13px; }
-    :host(.font-small) .tz-definitions { font-size: 12px; }
+    :host(.font-small) .tz-hanzi { font-size: 18px; }
+    :host(.font-small) .tz-py { font-size: 12px; }
+    :host(.font-small) .tz-defs { font-size: 11px; }
+    :host(.font-small) .tz-char-big { font-size: 36px; }
 
-    :host(.font-large) .tz-hanzi { font-size: 28px; }
-    :host(.font-large) .tz-pinyin { font-size: 17px; }
-    :host(.font-large) .tz-definitions { font-size: 16px; }
+    :host(.font-large) .tz-hanzi { font-size: 26px; }
+    :host(.font-large) .tz-py { font-size: 16px; }
+    :host(.font-large) .tz-defs { font-size: 15px; }
+    :host(.font-large) .tz-char-big { font-size: 52px; }
 
-    .tz-hidden {
-      display: none !important;
-    }
-
-    /* Highlight the matched text range */
-    .tz-highlight {
-      background: rgba(255, 220, 100, 0.35);
-      border-radius: 2px;
-    }
+    .tz-hidden { display: none !important; }
   `;
 }

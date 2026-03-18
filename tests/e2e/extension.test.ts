@@ -79,7 +79,7 @@ async function waitForPopup(page: Page, timeout: number = 8000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     const exists = await page.evaluate(() => {
-      const host = document.getElementById('tenzhong-popup-host');
+      const host = document.getElementById('zitan-popup-host');
       if (!host?.shadowRoot) return false;
       const popup = host.shadowRoot.querySelector('.tz-popup');
       return popup !== null && !popup.classList.contains('tz-hidden');
@@ -100,20 +100,24 @@ async function getPopupData(page: Page): Promise<{
   isHidden: boolean;
 }> {
   return page.evaluate(() => {
-    const host = document.getElementById('tenzhong-popup-host');
+    const host = document.getElementById('zitan-popup-host');
     if (!host?.shadowRoot) {
       return { hanzi: '', pinyin: '', defs: '', pinyinSpans: 0, hasHost: false, hasShadow: false, isHidden: true };
     }
     const popup = host.shadowRoot.querySelector('.tz-popup');
     const hanziEl = host.shadowRoot.querySelector('.tz-hanzi');
-    const pinyinEl = host.shadowRoot.querySelector('.tz-pinyin');
-    const defsEl = host.shadowRoot.querySelector('.tz-definitions');
+    const rowEl = host.shadowRoot.querySelector('.tz-row');
+    const defsEl = host.shadowRoot.querySelector('.tz-defs');
+
+    // Pinyin spans use class .tz-py and live inside .tz-row
+    const pinyinSpans = rowEl?.querySelectorAll('.tz-py') || [];
+    const pinyinText = Array.from(pinyinSpans).map(el => el.textContent).join(' ');
 
     return {
       hanzi: hanziEl?.textContent || '',
-      pinyin: pinyinEl?.textContent || '',
+      pinyin: pinyinText,
       defs: defsEl?.textContent || '',
-      pinyinSpans: pinyinEl?.querySelectorAll('.tz-pinyin-syllable').length || 0,
+      pinyinSpans: pinyinSpans.length,
       hasHost: true,
       hasShadow: true,
       isHidden: !popup || popup.classList.contains('tz-hidden'),
@@ -121,7 +125,7 @@ async function getPopupData(page: Page): Promise<{
   });
 }
 
-describe('TenZhong Extension E2E', () => {
+describe('ZiTan Extension E2E', () => {
   beforeAll(async () => {
     serverUrl = await startServer();
     console.log(`[E2E] Test server: ${serverUrl}`);
@@ -154,7 +158,7 @@ describe('TenZhong Extension E2E', () => {
           await new Promise((r) => setTimeout(r, 500));
           try {
             const db = await new Promise<IDBDatabase>((resolve, reject) => {
-              const req = indexedDB.open('tenzhong-dict');
+              const req = indexedDB.open('zitan-dict');
               req.onsuccess = () => resolve(req.result);
               req.onerror = () => reject(req.error);
             });
@@ -177,7 +181,7 @@ describe('TenZhong Extension E2E', () => {
     page = await browser.newPage();
     await page.setViewport({ width: 1024, height: 768 });
     page.on('console', (msg) => {
-      if (msg.text().includes('TenZhong')) console.log(`[CS] ${msg.text()}`);
+      if (msg.text().includes('ZiTan')) console.log(`[CS] ${msg.text()}`);
     });
     page.on('pageerror', (err) => console.error(`[PAGE ERROR] ${err.message}`));
 
@@ -304,7 +308,7 @@ describe('TenZhong Extension E2E', () => {
     await waitForPopup(page);
 
     const isolated = await page.evaluate(() => {
-      const host = document.getElementById('tenzhong-popup-host');
+      const host = document.getElementById('zitan-popup-host');
       if (!host?.shadowRoot) return false;
       // Verify style tag exists inside shadow root (not in main document)
       const style = host.shadowRoot.querySelector('style');

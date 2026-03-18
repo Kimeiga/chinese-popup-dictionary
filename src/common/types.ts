@@ -24,9 +24,116 @@ export interface LookupResult {
   matchText: string;
 }
 
+// ---- Dong Chinese types ----
+
+/** A single item (pronunciation + definitions) within a Dong Chinese word entry */
+export interface DongWordItem {
+  source?: string;
+  pinyin?: string;
+  simpTrad?: string;
+  definitions?: string[];
+  tang?: string[];
+}
+
+/** Dong Chinese word entry */
+export interface DongWordEntry {
+  _id: string;
+  simp: string;
+  trad: string;
+  items: DongWordItem[];
+  gloss?: string;
+  statistics?: DongStatistics;
+}
+
+/** Dong Chinese character component */
+export interface DongComponent {
+  character: string;
+  type: string[];
+  hint?: string | null;
+}
+
+/** Dong Chinese character entry */
+export interface DongCharEntry {
+  _id: string;
+  char: string;
+  codepoint?: string;
+  strokeCount?: number;
+  sources?: string[];
+  components?: DongComponent[];
+  gloss?: string;
+  hint?: string;
+  oldPronunciations?: DongOldPronunciation[];
+  pinyinFrequencies?: DongPinyinFrequency[];
+  statistics?: DongCharStatistics;
+  isVerified?: boolean;
+  shuowen?: string;
+  originalMeaning?: string;
+  variantOf?: string;
+  tradVariants?: string[];
+  simpVariants?: string[];
+}
+
+export interface DongOldPronunciation {
+  pinyin: string;
+  MC?: string;
+  OC?: string;
+  gloss?: string;
+  source?: string;
+}
+
+export interface DongPinyinFrequency {
+  pinyin: string;
+  count: number;
+}
+
+export interface DongStatistics {
+  hskLevel?: number;
+  bookWordCount?: number;
+  bookWordCountPercent?: number;
+  bookWordRank?: number;
+  movieWordCount?: number;
+  movieWordRank?: number;
+  topWords?: DongTopWord[];
+}
+
+export interface DongCharStatistics extends DongStatistics {
+  bookCharCount?: number;
+  bookCharRank?: number;
+  movieCharCount?: number;
+  movieCharRank?: number;
+  pinyinFrequency?: number;
+}
+
+export interface DongTopWord {
+  word: string;
+  trad: string;
+  share: number;
+  gloss?: string;
+}
+
+/** Word lookup result: CC-CEDICT entries + matching Dong Chinese word entries */
+export interface WordLookupResult extends LookupResult {
+  dongEntries: DongWordEntry[];
+}
+
+/** Character lookup result */
+export interface CharLookupResult {
+  char: string;
+  entry: DongCharEntry | null;
+}
+
+/** Which popup tab is active */
+export type PopupTab = 'word' | 'character';
+
+/** Copy feedback state */
+export type CopyState =
+  | { mode: 'inactive'; selectedIndex: number }
+  | { mode: 'copied'; what: string; selectedIndex: number };
+
 /** Messages sent from content script to service worker */
 export type ContentToBackground =
   | { type: 'lookup'; text: string; maxResults?: number }
+  | { type: 'lookupChar'; char: string }
   | { type: 'getState' }
   | { type: 'toggleEnabled' };
 
@@ -48,7 +155,7 @@ export interface ExtensionSettings {
   /** Font size for popup */
   fontSize: 'small' | 'normal' | 'large';
   /** Domains to disable the extension on */
-  blacklist: string[];
+  blocklist: string[];
   /** Whether the extension is enabled */
   enabled: boolean;
   /** Whether to show zhuyin (bopomofo) */
@@ -61,9 +168,9 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   charDisplay: 'both',
   showToneColors: true,
   toneColors: ['#E74C3C', '#F39C12', '#27AE60', '#3498DB', '#95A5A6'],
-  theme: 'light',
+  theme: 'dark',
   fontSize: 'normal',
-  blacklist: [],
+  blocklist: [],
   enabled: true,
   showZhuyin: false,
   maxEntries: 7,

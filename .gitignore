@@ -1,11 +1,12 @@
 node_modules/
 dist/
-data/cedict.txt
-data/cedict.txt.gz
-data/cedict.json
 *.zip
 .DS_Store
 *.map
+
+# Dictionary source & built data (too large for git, built via npm scripts)
+data/
+*.jsonl
 
 # Reference repos (local only)
 10ten-ja-reader/
