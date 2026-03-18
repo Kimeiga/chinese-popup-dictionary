@@ -330,14 +330,15 @@ function renderWordEntry(
     hskBadge = `<span class="tz-hsk tz-hsk-${lvl}">HSK${lvl}</span>`;
   }
 
-  // Frequency rank (show book + movie if available)
+  // Frequency rank — show whichever is available, prefer book rank
   let freqHtml = '';
   const stats = dongEntry?.statistics;
   if (stats) {
-    const parts: string[] = [];
-    if (stats.bookWordRank) parts.push(`#${stats.bookWordRank}`);
-    if (stats.movieWordRank) parts.push(`M#${stats.movieWordRank}`);
-    if (parts.length) freqHtml = `<span class="tz-freq">${parts.join(' ')}</span>`;
+    if (stats.bookWordRank) {
+      freqHtml = `<span class="tz-freq" title="Word frequency rank (books)">#${stats.bookWordRank}</span>`;
+    } else if (stats.movieWordRank) {
+      freqHtml = `<span class="tz-freq" title="Word frequency rank (movies)">#${stats.movieWordRank}</span>`;
+    }
   }
 
   // Pinyin
@@ -518,10 +519,9 @@ function renderCharacterTab(): string {
       badges.push(`<span class="tz-hsk tz-hsk-${entry.statistics.hskLevel}">HSK${entry.statistics.hskLevel}</span>`);
     }
     if (entry.statistics?.bookCharRank) {
-      badges.push(`<span class="tz-freq">#${entry.statistics.bookCharRank}</span>`);
-    }
-    if (entry.statistics?.movieCharRank) {
-      badges.push(`<span class="tz-freq">M#${entry.statistics.movieCharRank}</span>`);
+      badges.push(`<span class="tz-freq" title="Character frequency rank (books)">#${entry.statistics.bookCharRank}</span>`);
+    } else if (entry.statistics?.movieCharRank) {
+      badges.push(`<span class="tz-freq" title="Character frequency rank (movies)">#${entry.statistics.movieCharRank}</span>`);
     }
     if (badges.length) html += `<div class="tz-char-badges">${badges.join(' ')}</div>`;
 

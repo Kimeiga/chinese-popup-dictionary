@@ -187,7 +187,7 @@ async function doLoadDongDicts(): Promise<void> {
   }
 }
 
-// ---- Variant Resolution ----
+// ---- Variant Resolution & Entry Ordering ----
 
 // Matches: "variant of 臺灣|台湾[Tai2 wan1]" or "old variant of 來[lai2]"
 const VARIANT_RE = /^(.*?variant) of (?:(\S+?)\|)?(\S+?)\[([^\]]+)\]$/i;
@@ -218,17 +218,29 @@ function parseVariantRef(
 }
 
 /**
- * Resolve variant entries by looking up the referenced word and merging
- * in its definitions. The original entry keeps its own characters/pinyin
- * but gets the real definitions + a variantOf label.
+ * Resolve variant entries:
+ * - Self-referencing variants ("old variant of 和[he2]" when looking at 和)
+ *   are removed entirely.
+ * - Variants pointing to a different word get their definitions replaced
+ *   with the target's definitions + a variantOf label.
  */
-async function resolveVariants(entries: DictEntry[]): Promise<DictEntry[]> {
+async function resolveVariants(
+  entries: DictEntry[],
+  matchText: string
+): Promise<DictEntry[]> {
   const resolved: DictEntry[] = [];
 
   for (const entry of entries) {
     const ref = parseVariantRef(entry);
     if (!ref) {
       resolved.push(entry);
+      continue;
+    }
+
+    // Self-referencing variant: the referenced word is the same as
+    // what's highlighted. This entry adds no value — skip it.
+    if (ref.simplified === matchText || ref.simplified === entry.simplified ||
+        (ref.traditional && ref.traditional === entry.traditional)) {
       continue;
     }
 
@@ -239,20 +251,65 @@ async function resolveVariants(entries: DictEntry[]): Promise<DictEntry[]> {
     }
 
     if (refEntries.length > 0) {
-      // Take the first matching entry's definitions
-      const refEntry = refEntries[0];
-      resolved.push({
-        ...entry,
-        definitions: refEntry.definitions,
-        variantOf: `${ref.type} of ${ref.simplified}`,
-      });
+      // Filter out variant-only entries from the target to avoid chains
+      const realRef = refEntries.find(e => !parseVariantRef(e));
+      if (realRef) {
+        resolved.push({
+          ...entry,
+          definitions: realRef.definitions,
+          variantOf: `${ref.type} of ${ref.simplified}`,
+        });
+      }
     } else {
-      // Couldn't resolve — keep original
       resolved.push(entry);
     }
   }
 
   return resolved;
+}
+
+/**
+ * Sort entries so the most common pronunciation comes first.
+ * Uses dong word items order (first item = primary pronunciation)
+ * and puts variant/surname entries at the bottom.
+ */
+function sortEntries(entries: DictEntry[], dongEntries: DongWordEntry[]): DictEntry[] {
+  if (entries.length <= 1) return entries;
+
+  // Get the primary pinyin from dong data (first item = most common)
+  let primaryPinyin: string | null = null;
+  if (dongEntries.length > 0) {
+    const items = dongEntries[0].items;
+    if (items.length > 0) {
+      const firstItem = items[0] as { pinyin?: string };
+      if (firstItem.pinyin) {
+        primaryPinyin = firstItem.pinyin.toLowerCase();
+      }
+    }
+  }
+
+  return [...entries].sort((a, b) => {
+    const aScore = entryPriority(a, primaryPinyin);
+    const bScore = entryPriority(b, primaryPinyin);
+    return aScore - bScore;
+  });
+}
+
+function entryPriority(entry: DictEntry, primaryPinyin: string | null): number {
+  // Variants always go to the bottom
+  if (entry.variantOf) return 100;
+
+  // Surname entries go near the bottom
+  if (entry.definitions.some(d => d.startsWith('surname '))) return 90;
+
+  // If we have dong data, boost entries matching the primary pinyin
+  if (primaryPinyin) {
+    const entryPinyin = entry.pinyinRaw.toLowerCase();
+    if (entryPinyin === primaryPinyin) return 0;
+  }
+
+  // Default: keep original order
+  return 50;
 }
 
 // ---- Message Handling ----
@@ -280,8 +337,17 @@ async function handleLookup(
     // Non-critical, continue without Dong data
   }
 
-  // Resolve variant entries (e.g. "variant of X") by following the reference
-  const resolvedEntries = await resolveVariants(result.entries.slice(0, maxResults));
+  // Resolve variant entries (e.g. "variant of X") and filter self-references
+  let resolvedEntries = await resolveVariants(
+    result.entries.slice(0, maxResults + 5), // extra buffer since some get filtered
+    matchText
+  );
+
+  // Sort by frequency: primary pronunciation first, surnames/variants last
+  resolvedEntries = sortEntries(resolvedEntries, dongEntries);
+
+  // Apply limit after filtering and sorting
+  resolvedEntries = resolvedEntries.slice(0, maxResults);
 
   return {
     entries: resolvedEntries,
