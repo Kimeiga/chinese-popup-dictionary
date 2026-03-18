@@ -4,12 +4,14 @@
  * Uses document.caretRangeFromPoint (Chrome) to find the exact text node
  * and offset under the cursor.
  *
- * Since highlighting uses the CSS Custom Highlight API (no DOM mutation),
- * text node references remain stable. Simple node+offset caching is
- * sufficient to avoid redundant work.
- *
- * Hysteresis: if cursor moved less than 4px, keep the previous result
- * to avoid flicker at character boundaries.
+ * Workarounds (inspired by 10ten Japanese Reader):
+ * - user-select: none — temporarily forces `user-select: text` on the element
+ *   and ancestors so caretRangeFromPoint can find the text.
+ * - Invisible overlays — temporarily sets `pointer-events: none` on overlay
+ *   elements that sit on top of text, then retries.
+ * - Caret offset correction — caretRangeFromPoint returns a caret (insertion
+ *   point), not the character. We correct for midpoint snapping.
+ * - Hysteresis — if cursor moved <4px, keep the previous result.
  */
 
 // Regex to detect if a character is CJK (Chinese/Japanese/Korean)
@@ -42,6 +44,134 @@ function distanceSq(x1: number, y1: number, x2: number, y2: number): number {
   const dy = y1 - y2;
   return dx * dx + dy * dy;
 }
+
+// ---- user-select workaround ----
+
+/**
+ * Temporarily force user-select: text on an element and all ancestors that
+ * have user-select set to something other than auto/text.
+ * Returns a restore function that undoes the changes.
+ */
+function forceUserSelectText(element: Element): () => void {
+  const modified: { el: HTMLElement; originalStyle: string | null }[] = [];
+  let current: Element | null = element;
+
+  while (current && current !== document.documentElement) {
+    if (current instanceof HTMLElement) {
+      const computed = getComputedStyle(current);
+      const us = computed.userSelect || (computed as any).webkitUserSelect;
+      if (us && us !== 'auto' && us !== 'text') {
+        modified.push({
+          el: current,
+          originalStyle: current.getAttribute('style'),
+        });
+        current.style.setProperty('user-select', 'text', 'important');
+        current.style.setProperty('-webkit-user-select', 'text', 'important');
+      }
+    }
+    current = current.parentElement;
+  }
+
+  return () => {
+    for (const { el, originalStyle } of modified) {
+      if (originalStyle === null) {
+        el.removeAttribute('style');
+      } else {
+        el.setAttribute('style', originalStyle);
+      }
+    }
+  };
+}
+
+// ---- Invisible overlay workaround ----
+
+/**
+ * Check if an element is visually empty / transparent and likely an overlay
+ * that blocks caretRangeFromPoint from reaching the text underneath.
+ */
+function isInvisibleOverlay(el: Element): boolean {
+  // Skip text-bearing elements
+  if (el.childNodes.length > 0) {
+    for (const child of el.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+        return false;
+      }
+    }
+  }
+
+  const style = getComputedStyle(el);
+
+  // Transparent background + no visible content
+  const bg = style.backgroundColor;
+  const isTransparentBg =
+    !bg ||
+    bg === 'transparent' ||
+    bg === 'rgba(0, 0, 0, 0)';
+
+  const hasNoBorder = !style.borderImageSource && (
+    !style.borderWidth ||
+    style.borderWidth === '0px' ||
+    style.borderStyle === 'none'
+  );
+
+  const hasNoBackground = isTransparentBg &&
+    (!style.backgroundImage || style.backgroundImage === 'none');
+
+  return hasNoBackground && hasNoBorder;
+}
+
+/**
+ * Temporarily set pointer-events: none on invisible overlay elements
+ * at the given point, then retry caretRangeFromPoint.
+ * Returns the range and a restore function.
+ */
+function caretRangeThroughOverlays(
+  x: number,
+  y: number
+): { range: Range | null; restore: () => void } {
+  const elements = document.elementsFromPoint(x, y);
+  const modified: { el: HTMLElement; originalStyle: string | null }[] = [];
+
+  for (const el of elements) {
+    if (!(el instanceof HTMLElement)) continue;
+
+    // Stop once we find an element with actual text content
+    if (el.childNodes.length > 0) {
+      let hasText = false;
+      for (const child of el.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+          hasText = true;
+          break;
+        }
+      }
+      if (hasText) break;
+    }
+
+    if (isInvisibleOverlay(el)) {
+      modified.push({
+        el,
+        originalStyle: el.getAttribute('style'),
+      });
+      el.style.setProperty('pointer-events', 'none', 'important');
+    }
+  }
+
+  const range = modified.length > 0 ? document.caretRangeFromPoint(x, y) : null;
+
+  const restore = () => {
+    for (const { el, originalStyle } of modified) {
+      if (originalStyle === null) {
+        el.removeAttribute('style');
+      } else {
+        el.setAttribute('style', originalStyle);
+      }
+    }
+  };
+
+  return { range, restore };
+}
+
+// ---- Caret offset correction ----
 
 /**
  * caretRangeFromPoint returns a caret position (between characters), not the
@@ -80,6 +210,77 @@ function adjustOffsetForPoint(
   return offset;
 }
 
+// ---- Main lookup ----
+
+/**
+ * Try to get a Range at (x, y) with all workarounds applied.
+ */
+function getCaretRangeWithWorkarounds(x: number, y: number): Range | null {
+  // 1. Standard attempt
+  let range = document.caretRangeFromPoint(x, y);
+
+  // 2. If no result or result is not a text node, try user-select fix
+  if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) {
+    const elementAtPoint = document.elementFromPoint(x, y);
+    if (elementAtPoint) {
+      const restore = forceUserSelectText(elementAtPoint);
+      range = document.caretRangeFromPoint(x, y);
+      restore();
+
+      if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+        return range;
+      }
+    }
+  }
+
+  // 3. If still no text node, try looking through invisible overlays
+  if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) {
+    const { range: overlayRange, restore } = caretRangeThroughOverlays(x, y);
+    restore();
+    if (overlayRange && overlayRange.startContainer.nodeType === Node.TEXT_NODE) {
+      return overlayRange;
+    }
+
+    // 4. Combine both: overlays + user-select
+    if (!overlayRange || overlayRange.startContainer.nodeType !== Node.TEXT_NODE) {
+      const elements = document.elementsFromPoint(x, y);
+      const overlayMods: { el: HTMLElement; originalStyle: string | null }[] = [];
+
+      // Disable overlays
+      for (const el of elements) {
+        if (el instanceof HTMLElement && isInvisibleOverlay(el)) {
+          overlayMods.push({ el, originalStyle: el.getAttribute('style') });
+          el.style.setProperty('pointer-events', 'none', 'important');
+        }
+      }
+
+      if (overlayMods.length > 0) {
+        const el2 = document.elementFromPoint(x, y);
+        if (el2) {
+          const restoreUs = forceUserSelectText(el2);
+          range = document.caretRangeFromPoint(x, y);
+          restoreUs();
+        }
+      }
+
+      // Restore overlays
+      for (const { el, originalStyle } of overlayMods) {
+        if (originalStyle === null) {
+          el.removeAttribute('style');
+        } else {
+          el.setAttribute('style', originalStyle);
+        }
+      }
+
+      if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+        return range;
+      }
+    }
+  }
+
+  return range;
+}
+
 /**
  * Get text content at a given screen coordinate.
  * Returns up to `maxLen` characters starting from the character under the cursor.
@@ -89,10 +290,8 @@ export function getTextAtPoint(
   y: number,
   maxLen: number = 20
 ): TextAtPoint | null {
-  // Use Chrome's caretRangeFromPoint
-  const range = document.caretRangeFromPoint(x, y);
+  const range = getCaretRangeWithWorkarounds(x, y);
   if (!range) {
-    // Hysteresis: if moved <4px from last successful result, keep it
     if (cachedResult && cachedPoint && distanceSq(cachedPoint.x, cachedPoint.y, x, y) < 16) {
       return cachedResult;
     }
@@ -113,11 +312,7 @@ export function getTextAtPoint(
   const textNode = node as Text;
   const fullText = textNode.textContent || '';
 
-  // caretRangeFromPoint returns the nearest caret (insertion point between
-  // characters), not the character under the cursor. Past the midpoint of a
-  // character it snaps to the RIGHT edge, giving offset N+1 instead of N.
-  // Fix: check if cursor x is within the bbox of char at `offset`. If not,
-  // try `offset - 1`.
+  // Correct for caret midpoint snapping
   offset = adjustOffsetForPoint(textNode, offset, fullText, x);
 
   // Check if the character under cursor is CJK
