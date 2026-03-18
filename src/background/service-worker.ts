@@ -511,25 +511,10 @@ chrome.action.onClicked.addListener(() => {
 
 // ---- Initialization ----
 
-chrome.runtime.onInstalled.addListener(async (details) => {
+chrome.runtime.onInstalled.addListener(() => {
   console.log('[ZiTan] Extension installed, loading dictionaries...');
   ensureDictLoaded();
   ensureDongDictsLoaded();
-
-  // Re-inject content script into existing tabs so the user doesn't have to reload
-  if (details.reason === 'install' || details.reason === 'update') {
-    const tabs = await chrome.tabs.query({ url: ['http://*/*', 'https://*/*'] });
-    for (const tab of tabs) {
-      if (tab.id) {
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ['content.js'],
-        }).catch(() => {
-          // Tab might not be scriptable
-        });
-      }
-    }
-  }
 });
 
 // Also ensure loaded on service worker startup
